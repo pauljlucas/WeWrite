@@ -11,7 +11,7 @@ tmp/
 *.swp
 *~.nib
 .loadpath
-R.java
+*/R.java
 
 # External tool builders
 .externalToolBuilders/

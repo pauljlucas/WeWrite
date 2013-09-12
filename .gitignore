@@ -12,6 +12,7 @@ tmp/
 *~.nib
 .loadpath
 R.java
+
 # External tool builders
 .externalToolBuilders/
 

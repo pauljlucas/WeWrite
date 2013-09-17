@@ -16,4 +16,12 @@
         android:layout_centerVertical="true"
         android:text="@string/join_session" />
 
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button1"
+        android:layout_centerHorizontal="true"
+        android:text="@string/create_session" />
+
 </RelativeLayout>

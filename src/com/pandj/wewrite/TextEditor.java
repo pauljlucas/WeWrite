@@ -3,14 +3,23 @@ package com.pandj.wewrite;
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.Menu;
+import android.widget.Button;
+import android.widget.TextView;
 
 public class TextEditor extends Activity
 {
 
+  private TextView textBox;
+  private Button undo, redo;
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    
+    textBox = (TextView) findViewById(R.id.editText1);
+    undo = (Button) findViewById(R.id.undo);
+    redo = (Button) findViewById(R.id.redo);
+    
     setContentView(R.layout.activity_text_editor);
   }
 

@@ -29,6 +29,11 @@
             android:name="com.pandj.wewrite.TextEditor"
             android:label="@string/title_activity_text_editor" >
         </activity>
+        <activity
+            android:name="com.pandj.wewrite.GetEmailAndDisplayName"
+            android:label="@string/title_activity_get_email_and_display_name"
+            android:windowSoftInputMode="adjustResize|stateVisible" >
+        </activity>
     </application>
 
 </manifest>

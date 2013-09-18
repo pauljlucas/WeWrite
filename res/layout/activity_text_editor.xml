@@ -30,13 +30,24 @@
         android:id="@+id/editText1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@+id/disconnect"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/undo"
+        android:background="@color/white"
         android:ems="10"
         android:gravity="top|left"
         android:inputType="textMultiLine"
         android:scrollbars="vertical" />
+
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/editText1"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:background="@color/red"
+        android:text="@string/disconnect" />
 
 </RelativeLayout>

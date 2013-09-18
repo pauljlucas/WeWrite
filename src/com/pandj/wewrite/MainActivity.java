@@ -72,7 +72,7 @@ public class MainActivity extends Activity implements OnClickListener
       createSession.setClickable(true);
       createSession.setEnabled(true);
       createUser.setText("Change User");
-      signedInStatus.setText("Signed in as:" + userName + ", " + email);
+      signedInStatus.setText("Signed in as: " + userName + ", " + email);
     }
   }
   @Override

@@ -24,6 +24,11 @@ public class TextEditor extends Activity
     setContentView(R.layout.activity_text_editor);
   }
 
+  @Override
+  public void onBackPressed()
+  {
+    //Do nothing, avoiding the hairy situations that could arise
+  }
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu)

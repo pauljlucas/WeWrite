@@ -19,6 +19,8 @@ public class MainActivity extends Activity implements OnClickListener
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
     //Good place for singleton injection
     
     
@@ -26,13 +28,31 @@ public class MainActivity extends Activity implements OnClickListener
     createUser = (Button) findViewById(R.id.createUser);
     joinSession = (Button) findViewById(R.id.joinSession);
     createSession = (Button) findViewById(R.id.createSession);
+     
+    //Set the listeners 
+    createUser.setOnClickListener(this);
+    joinSession.setOnClickListener(this);
+    createSession.setOnClickListener(this);
     
+    //For Testing, seeing how preferences work
+    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    SharedPreferences.Editor editor = preferences.edit();
+    editor.putString("email", "NOTSET");
+    editor.putString("username", "NOTSET");
+    editor.commit();
+        
+  }
+
+  @Override
+  protected void onResume()
+  {
+    super.onResume();
     //See if the preferences are set up
     SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-    String email = preferences.getString("email","");
-    String userName = preferences.getString("username","");
+    String email = preferences.getString("email","NOTSET");
+    String userName = preferences.getString("username","NOTSET");
     
-    if(TextUtils.isEmpty(email)||(TextUtils.isEmpty(userName)))
+    if(TextUtils.equals("NOTSET", email)||(TextUtils.equals("NOTSET", userName)))
     {
       joinSession.setClickable(false);
       joinSession.setEnabled(false);
@@ -49,15 +69,7 @@ public class MainActivity extends Activity implements OnClickListener
       createSession.setEnabled(true);
       createUser.setText("Change User");
     }
-    
-    //Set the listeners 
-    createUser.setOnClickListener(this);
-    joinSession.setOnClickListener(this);
-    createSession.setOnClickListener(this);
-        
-    setContentView(R.layout.activity_main);
   }
-
   @Override
   public void onBackPressed()
   {

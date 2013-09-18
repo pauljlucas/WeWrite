@@ -15,7 +15,8 @@ public class TextEditor extends Activity
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    
+    setContentView(R.layout.activity_text_editor);
+
     textBox = (TextView) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
     redo = (Button) findViewById(R.id.redo);

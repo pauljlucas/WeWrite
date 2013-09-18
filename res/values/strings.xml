@@ -10,5 +10,6 @@
     <string name="join_session">Join Session</string>
     <string name="create_session">Create Session</string>
     <string name="create_user">Create User</string>
+    <color name="background">#808000</color>
 
 </resources>

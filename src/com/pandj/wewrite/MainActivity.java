@@ -10,10 +10,12 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity implements OnClickListener
 {
   private Button createUser, joinSession, createSession;
+  private TextView signedInStatus;
   
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -28,19 +30,21 @@ public class MainActivity extends Activity implements OnClickListener
     createUser = (Button) findViewById(R.id.createUser);
     joinSession = (Button) findViewById(R.id.joinSession);
     createSession = (Button) findViewById(R.id.createSession);
+    signedInStatus = (TextView) findViewById(R.id.userStatus);
+    
      
     //Set the listeners 
     createUser.setOnClickListener(this);
     joinSession.setOnClickListener(this);
     createSession.setOnClickListener(this);
     
-    //For Testing, seeing how preferences work
-    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-    SharedPreferences.Editor editor = preferences.edit();
-    editor.putString("email", "NOTSET");
-    editor.putString("username", "NOTSET");
-    editor.commit();
-        
+//    //For Testing, seeing how preferences work
+//    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+//    SharedPreferences.Editor editor = preferences.edit();
+//    editor.putString("email", "NOTSET");
+//    editor.putString("username", "NOTSET");
+//    editor.commit();
+//        
   }
 
   @Override
@@ -59,7 +63,7 @@ public class MainActivity extends Activity implements OnClickListener
       createSession.setClickable(false);
       createSession.setEnabled(false);
       createUser.setText("Create User");
-
+      signedInStatus.setText("Not Signed In");
     }
     else
     {
@@ -68,6 +72,7 @@ public class MainActivity extends Activity implements OnClickListener
       createSession.setClickable(true);
       createSession.setEnabled(true);
       createUser.setText("Change User");
+      signedInStatus.setText("Signed in as:" + userName + ", " + email);
     }
   }
   @Override

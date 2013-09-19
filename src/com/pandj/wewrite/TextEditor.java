@@ -39,7 +39,14 @@ public class TextEditor extends Activity implements OnClickListener
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
-        // Don't think we have to do anything here
+      panCake toTheStack = new panCake();
+      String temp = s.subSequence(start, start + count).toString();
+      toTheStack.text = temp;
+      toTheStack.index = cursorLocation + s.length();
+      toTheStack.valid = false;//For right now
+      localUndoStack.push(toTheStack);
+      enableButton(undo);
+      localText = s.toString();
     }
 
     @Override
@@ -51,13 +58,7 @@ public class TextEditor extends Activity implements OnClickListener
     @Override
     public void afterTextChanged(Editable s) 
     {
-      panCake toTheStack = new panCake();
-      toTheStack.text = s.toString();
-      toTheStack.index = cursorLocation + s.length();
-      toTheStack.valid = false;//For right now
-      localUndoStack.push(toTheStack);
-      enableButton(undo);
-      localText = s.toString();
+
     }
 
  
@@ -92,7 +93,6 @@ public class TextEditor extends Activity implements OnClickListener
     edgeCase.index = 0;
     
     localUndoStack.push(edgeCase);
-    localRedoStack.push(edgeCase);
     
     
     disableButton(undo);

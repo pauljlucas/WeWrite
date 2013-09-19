@@ -39,8 +39,6 @@ public class GetEmailAndDisplayName extends Activity
   /**
    * Keep track of the login task to ensure we can cancel it if requested.
    */
-  private UserLoginTask mAuthTask = null;
-
   // Values for email and password at the time of the login attempt.
   private String mEmail;
   private String mUserName;
@@ -101,11 +99,6 @@ public class GetEmailAndDisplayName extends Activity
    */
   public void attemptLogin()
   {
-    //This would occur if somebody already tried to log in
-    if( mAuthTask != null )
-    {
-      return;
-    }
 
     // Reset errors.
     mEmailView.setError(null);
@@ -158,102 +151,6 @@ public class GetEmailAndDisplayName extends Activity
       editor.commit();
       
       mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
-      showProgress(true);
-      mAuthTask = new UserLoginTask();
-      mAuthTask.execute((Void) null);
-    }
-  }
-
-  /**
-   * Shows the progress UI and hides the login form.
-   */
-  @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-  private void showProgress(final boolean show)
-  {
-    // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-    // for very easy animations. If available, use these APIs to fade-in
-    // the progress spinner.
-    if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2 )
-    {
-      int shortAnimTime = getResources().getInteger(
-          android.R.integer.config_shortAnimTime);
-
-      mLoginStatusView.setVisibility(View.VISIBLE);
-      mLoginStatusView.animate().setDuration(shortAnimTime).alpha(show ? 1 : 0)
-          .setListener(new AnimatorListenerAdapter()
-          {
-            @Override
-            public void onAnimationEnd(Animator animation)
-            {
-              mLoginStatusView.setVisibility(show ? View.VISIBLE : View.GONE);
-            }
-          });
-
-      mLoginFormView.setVisibility(View.VISIBLE);
-      mLoginFormView.animate().setDuration(shortAnimTime).alpha(show ? 0 : 1)
-          .setListener(new AnimatorListenerAdapter()
-          {
-            @Override
-            public void onAnimationEnd(Animator animation)
-            {
-              mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            }
-          });
-    }
-    else
-    {
-      // The ViewPropertyAnimator APIs are not available, so simply show
-      // and hide the relevant UI components.
-      mLoginStatusView.setVisibility(show ? View.VISIBLE : View.GONE);
-      mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-    }
-  }
-
-  /**
-   * Represents an asynchronous login/registration task used to authenticate the
-   * user.
-   */
-  public class UserLoginTask extends AsyncTask<Void, Void, Boolean>
-  {
-    @Override
-    protected Boolean doInBackground(Void... params)
-    {
-      if( ColabrifyClientObject.getInstance() == null)
-      {
-        ColabrifyClientObject client = ColabrifyClientObject.getInstance();
-        client.changeCredentials(mEmail, mUserName);
-      }
-      else//We are changing the users
-      {
-        ColabrifyClientObject client = ColabrifyClientObject.getInstance();
-        //Some function is needed here to update the object
-      }
-      
-      return true;
-    }
-
-    @Override
-    protected void onPostExecute(final Boolean success)
-    {
-      mAuthTask = null;
-      showProgress(false);
-
-      if( success )
-      {
-        finish();
-      }
-      else
-      {
-        mUsernameView.setError(getString(R.string.error_incorrect_password));
-        mUsernameView.requestFocus();
-      }
-    }
-
-    @Override
-    protected void onCancelled()
-    {
-      mAuthTask = null;
-      showProgress(false);
     }
   }
 }

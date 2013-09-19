@@ -38,13 +38,6 @@ public class MainActivity extends Activity implements OnClickListener
     joinSession.setOnClickListener(this);
     createSession.setOnClickListener(this);
     
-//    //For Testing, seeing how preferences work
-//    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-//    SharedPreferences.Editor editor = preferences.edit();
-//    editor.putString("email", "NOTSET");
-//    editor.putString("username", "NOTSET");
-//    editor.commit();
-//        
   }
 
   @Override

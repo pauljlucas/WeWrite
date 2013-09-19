@@ -25,12 +25,15 @@ public class TextEditor extends Activity implements OnClickListener
   
   private String localText;
   private int cursorLocation;
+  private ColabrifyClientObject client;
   
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_text_editor);
+    client = ColabrifyClientObject.getInstance();
+
 
     redoUndoChecker = null;
     //CollabrifyClient and Listener should be moved here.

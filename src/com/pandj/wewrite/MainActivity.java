@@ -58,23 +58,34 @@ public class MainActivity extends Activity implements OnClickListener
     
     if(TextUtils.equals("NOTSET", email)||(TextUtils.equals("NOTSET", userName)))
     {
-      joinSession.setClickable(false);
-      joinSession.setEnabled(false);
-      createSession.setClickable(false);
-      createSession.setEnabled(false);
+      disableButton(joinSession);
+      disableButton(createSession);
       createUser.setText("Create User");
       signedInStatus.setText("Not Signed In");
     }
     else
     {
-      joinSession.setClickable(true);
-      joinSession.setEnabled(true);
-      createSession.setClickable(true);
-      createSession.setEnabled(true);
+      enableButton(joinSession);
+      enableButton(createSession);
       createUser.setText("Change User");
       signedInStatus.setText("Signed in as: " + userName + ", " + email);
     }
   }
+  
+  private void disableButton(Button b)
+  {
+    b.setClickable(false);
+    b.setEnabled(false);
+    b.setVisibility(View.GONE);
+  }
+  
+  private void enableButton(Button b)
+  {
+    b.setClickable(true);
+    b.setEnabled(true);
+    b.setVisibility(View.VISIBLE);
+  }
+  
   @Override
   public void onBackPressed()
   {

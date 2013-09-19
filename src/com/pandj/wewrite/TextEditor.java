@@ -27,16 +27,49 @@ public class TextEditor extends Activity implements OnClickListener
   private int cursorLocation;
   private ColabrifyClientObject client;
   
+  private class customListener implements TextWatcher, OnClickListener
+  {
+
+    @Override
+    public void onClick(View v)
+    {
+      // TODO: Cursor Change!
+      
+    }
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) 
+    {
+        // Don't think we have to do anything here
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) 
+    {
+
+    }
+
+    @Override
+    public void afterTextChanged(Editable s) 
+    {
+      panCake toTheStack = new panCake();
+      toTheStack.text = s.toString();
+      toTheStack.index = cursorLocation + s.length();
+      toTheStack.valid = false;//For right now
+      localUndoStack.push(toTheStack);
+      enableButton(undo);
+      localText = s.toString();
+    }
+
+ 
+  }
+  private customListener textBoxListener;
+  
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_text_editor);
     client = ColabrifyClientObject.getInstance();
-
-
-    redoUndoChecker = null;
-    //CollabrifyClient and Listener should be moved here.
     
     textBox = (TextView) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
@@ -49,47 +82,25 @@ public class TextEditor extends Activity implements OnClickListener
     
     localUndoStack = new Stack<panCake>();
     localRedoStack = new Stack<panCake>();
+
     localText = "";//This will change if we are joining an already existing session
     cursorLocation = 0;
+
+    panCake edgeCase = new panCake();
+    edgeCase.text = localText;
+    edgeCase.valid = true;
+    edgeCase.index = 0;
+    
+    localUndoStack.push(edgeCase);
+    localRedoStack.push(edgeCase);
+    
     
     disableButton(undo);
     disableButton(redo);
     
-    textBox.addTextChangedListener(new TextWatcher() 
-    {  
-      @Override
-      public void onTextChanged(CharSequence s, int start, int before, int count) 
-      {
-          // Don't think we have to do anything here
-      }
-
-      @Override
-      public void beforeTextChanged(CharSequence s, int start, int count, int after) 
-      {
-        try{
-          if(((redoUndoChecker != null)&&(redoUndoChecker != localUndoStack.peek())&&(redoUndoChecker != localRedoStack.peek())))
-          {
-            panCake toTheStack = new panCake();
-            toTheStack.text = s.toString();
-            toTheStack.index = cursorLocation + after;
-            toTheStack.valid = false;//For right now
-            localUndoStack.push(toTheStack);
-            enableButton(undo);
-          }
-        }
-        catch(Exception e)
-        {
-          //possibility of emptyStackExceptions
-        }
-      }
-
-      @Override
-      public void afterTextChanged(Editable s) 
-      {
-        localText = s.toString();
-      }
-  });
-    
+    textBoxListener = new customListener();
+    textBox.addTextChangedListener(textBoxListener);
+    textBox.setOnClickListener(textBoxListener);
   }
   
   private class panCake
@@ -144,7 +155,9 @@ public class TextEditor extends Activity implements OnClickListener
           {
             disableButton(undo);
           }
+          textBox.removeTextChangedListener(textBoxListener);
           textBox.setText(obj.text);
+          textBox.addTextChangedListener(textBoxListener);
         }
         break;
       case(R.id.redo) :
@@ -158,7 +171,9 @@ public class TextEditor extends Activity implements OnClickListener
           {
             disableButton(redo);
           }
+          textBox.removeTextChangedListener(textBoxListener);
           textBox.setText(obj.text);
+          textBox.addTextChangedListener(textBoxListener);
         }
         break;
       case(R.id.disconnect) :

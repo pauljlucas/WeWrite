@@ -37,16 +37,16 @@ public class ColabrifyClientObject implements CollabrifyListener
     {
       this.email = email;
       this.userName = userName;
-      
-      try//Don't know what null in the context is going to do, this might have to be re-thought out.
-      {
-        myClient = new CollabrifyClient(null, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, this);
-      }
-      catch(CollabrifyException e)
-      {
-        e.printStackTrace();
-      }
-     
+//      
+//      try//Don't know what null in the context is going to do, this might have to be re-thought out.
+//      {
+//        //myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, this);
+//      }
+//     // catch(CollabrifyException e)
+//      {
+//        e.printStackTrace();
+//      }
+//     
     }
     else //More difficult problem
     {

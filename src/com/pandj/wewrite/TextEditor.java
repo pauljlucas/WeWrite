@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 public class TextEditor extends Activity implements OnClickListener
@@ -21,7 +22,6 @@ public class TextEditor extends Activity implements OnClickListener
   private Stack<panCake> localUndoStack;
   private Stack<panCake> localRedoStack;
   private Stack<panCake> remoteStack;
-  private panCake redoUndoChecker;
   
   private String localText;
   private int cursorLocation;
@@ -39,14 +39,31 @@ public class TextEditor extends Activity implements OnClickListener
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
+      //This is the correct one to use. As long as we push the first string to the stack.
+      //s is the entirety of the string that is going to show up after this key press
+      int secondCut;
+      if(before < count)//Insertion
+      {
+        secondCut = start + before;
+      }
+      else if( before == count)//Might caused issues with swap but fixes the triple stack problem
+      {
+        return;
+      }
+      else//Deletion
+      {
+        secondCut = localText.length();
+      }
+      String temp = new String(localText.substring(0, start) + s.subSequence(start, start + count)
+          + localText.substring(secondCut, localText.length()));
+      
+      
+      localText = temp;
       panCake toTheStack = new panCake();
-      String temp = s.subSequence(start, start + count).toString();
-      toTheStack.text = temp;
-      toTheStack.index = cursorLocation + s.length();
+      toTheStack.text = localText;
       toTheStack.valid = false;//For right now
       localUndoStack.push(toTheStack);
       enableButton(undo);
-      localText = s.toString();
     }
 
     @Override
@@ -107,6 +124,7 @@ public class TextEditor extends Activity implements OnClickListener
   {
     String text;
     long index;
+    long length;
     boolean valid;
   }
 
@@ -147,7 +165,6 @@ public class TextEditor extends Activity implements OnClickListener
         if(!localUndoStack.isEmpty())
         {
           panCake obj = localUndoStack.pop();
-          redoUndoChecker = obj;
           //Might need to change validity later
           localRedoStack.push(obj);
           enableButton(redo);
@@ -164,7 +181,6 @@ public class TextEditor extends Activity implements OnClickListener
         if(!localRedoStack.isEmpty())
         {
           panCake obj = localRedoStack.pop();
-          redoUndoChecker = obj;
           localUndoStack.push(obj);
           enableButton(undo);
           if(localRedoStack.isEmpty())

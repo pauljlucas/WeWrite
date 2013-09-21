@@ -5,6 +5,8 @@ import java.util.Stack;
 import android.os.Bundle;
 import android.app.Activity;
 import android.text.Editable;
+import android.text.Selection;
+import android.text.Spannable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.View;
@@ -16,7 +18,7 @@ import android.widget.TextView;
 public class TextEditor extends Activity implements OnClickListener
 {
 
-  private TextView textBox;
+  private EditText textBox;
   private Button undo, redo, disconnect;
   
   private Stack<panCake> localUndoStack;
@@ -25,6 +27,7 @@ public class TextEditor extends Activity implements OnClickListener
   
   private String localText;
   private int cursorLocation;
+  private Spannable.Factory cursorObject;
   private ColabrifyClientObject client;
   
   private class customListener implements TextWatcher, OnClickListener
@@ -54,10 +57,10 @@ public class TextEditor extends Activity implements OnClickListener
       {
         secondCut = localText.length();
       }
-      String temp = new String(localText.substring(0, start) + s.subSequence(start, start + count)
-          + localText.substring(secondCut, localText.length()));
-      
-      
+      //String temp = new String(localText.substring(0, start) + s.subSequence(start, start + count)
+      //    + localText.substring(secondCut, localText.length()));
+      String temp = s.toString();
+
       localText = temp;
       panCake toTheStack = new panCake();
       toTheStack.text = localText;
@@ -65,6 +68,7 @@ public class TextEditor extends Activity implements OnClickListener
       localUndoStack.push(toTheStack);
       enableButton(undo);
     }
+    
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) 
@@ -89,7 +93,9 @@ public class TextEditor extends Activity implements OnClickListener
     setContentView(R.layout.activity_text_editor);
     client = ColabrifyClientObject.getInstance();
     
-    textBox = (TextView) findViewById(R.id.editText1);
+    cursorObject = Spannable.Factory.getInstance();
+    
+    textBox = (EditText) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
     redo = (Button) findViewById(R.id.redo);
     disconnect = (Button) findViewById(R.id.disconnect);

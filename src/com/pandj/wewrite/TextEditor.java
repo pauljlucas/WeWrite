@@ -2,6 +2,7 @@ package com.pandj.wewrite;
 
 import java.util.Stack;
 
+import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import android.os.Bundle;
 import android.app.Activity;
 import android.text.Editable;
@@ -27,18 +28,11 @@ public class TextEditor extends Activity implements OnClickListener
   
   private String localText;
   private int cursorLocation;
-  private Spannable.Factory cursorObject;
   private ColabrifyClientObject client;
   
-  private class customListener implements TextWatcher, OnClickListener
+  private class customListener implements TextWatcher
   {
 
-    @Override
-    public void onClick(View v)
-    {
-      // TODO: Cursor Change!
-      
-    }
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
@@ -57,13 +51,13 @@ public class TextEditor extends Activity implements OnClickListener
       {
         secondCut = localText.length();
       }
-      //String temp = new String(localText.substring(0, start) + s.subSequence(start, start + count)
-      //    + localText.substring(secondCut, localText.length()));
       String temp = s.toString();
 
+      cursorLocation = start + count;
       localText = temp;
       panCake toTheStack = new panCake();
-      toTheStack.text = localText;
+      toTheStack.textAfter = localText;
+      toTheStack.cursorLocationAfter = cursorLocation;
       toTheStack.valid = false;//For right now
       localUndoStack.push(toTheStack);
       enableButton(undo);
@@ -92,9 +86,7 @@ public class TextEditor extends Activity implements OnClickListener
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_text_editor);
     client = ColabrifyClientObject.getInstance();
-    
-    cursorObject = Spannable.Factory.getInstance();
-    
+        
     textBox = (EditText) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
     redo = (Button) findViewById(R.id.redo);
@@ -111,9 +103,8 @@ public class TextEditor extends Activity implements OnClickListener
     cursorLocation = 0;
 
     panCake edgeCase = new panCake();
-    edgeCase.text = localText;
+    edgeCase.textAfter = localText;
     edgeCase.valid = true;
-    edgeCase.index = 0;
     
     localUndoStack.push(edgeCase);
     
@@ -123,15 +114,34 @@ public class TextEditor extends Activity implements OnClickListener
     
     textBoxListener = new customListener();
     textBox.addTextChangedListener(textBoxListener);
-    textBox.setOnClickListener(textBoxListener);
   }
   
-  private class panCake
+  private class panCake implements Runnable 
   {
-    String text;
-    long index;
-    long length;
+    
+    void panCake(ColabrifyClientObject c)
+    {
+      
+    }
+    //These could all be encapsulated in a proto buffer class
+    String textAfter;
+    String textBefore;
+    int cursorLocationAfter;
+    int cursorLocationBefore;
+    long globalOrderId;
     boolean valid;
+    
+    public void changeText(EditText t)
+    {
+      
+    }
+
+    @Override
+    public void run()
+    {
+      // TODO Auto-generated method stub
+      
+    }
   }
 
   private void disableButton(Button b)
@@ -179,7 +189,8 @@ public class TextEditor extends Activity implements OnClickListener
             disableButton(undo);
           }
           textBox.removeTextChangedListener(textBoxListener);
-          textBox.setText(obj.text);
+          textBox.setText(obj.textAfter);
+          textBox.setSelection(obj.cursorLocationAfter);
           textBox.addTextChangedListener(textBoxListener);
         }
         break;
@@ -194,7 +205,8 @@ public class TextEditor extends Activity implements OnClickListener
             disableButton(redo);
           }
           textBox.removeTextChangedListener(textBoxListener);
-          textBox.setText(obj.text);
+          textBox.setText(obj.textAfter);
+          textBox.setSelection(obj.cursorLocationAfter);
           textBox.addTextChangedListener(textBoxListener);
         }
         break;

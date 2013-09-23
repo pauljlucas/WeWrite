@@ -3,8 +3,12 @@ package com.pandj.wewrite;
 import java.util.Stack;
 
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
+import edu.umich.imlc.collabrify.client.CollabrifyListener;
+import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.text.Editable;
 import android.text.Selection;
 import android.text.Spannable;
@@ -28,7 +32,11 @@ public class TextEditor extends Activity implements OnClickListener
   
   private String localText;
   private int cursorLocation;
+  
+  private String userName;
+  private String email;
   private ColabrifyClientObject client;
+  private CollabrifyClient myClient;
   
   private class customListener implements TextWatcher
   {
@@ -81,12 +89,33 @@ public class TextEditor extends Activity implements OnClickListener
   private customListener textBoxListener;
   
   @Override
+  protected void onResume()
+  {
+    super.onResume();
+    
+  }
+  @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_text_editor);
-    client = ColabrifyClientObject.getInstance();
-        
+
+    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    email = preferences.getString("email","NOTSET");
+    userName = preferences.getString("username","NOTSET");
+    
+    textBoxListener = new customListener();
+    textBox.addTextChangedListener(textBoxListener);
+    
+    try
+    {
+      myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, (CollabrifyListener) textBoxListener);
+    }
+    catch( CollabrifyException e )
+    {
+      e.printStackTrace();
+    }
+
     textBox = (EditText) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
     redo = (Button) findViewById(R.id.redo);
@@ -112,8 +141,7 @@ public class TextEditor extends Activity implements OnClickListener
     disableButton(undo);
     disableButton(redo);
     
-    textBoxListener = new customListener();
-    textBox.addTextChangedListener(textBoxListener);
+
   }
   
   private class panCake implements Runnable 

@@ -16,6 +16,7 @@ public class MainActivity extends Activity implements OnClickListener
 {
   private Button createUser, joinSession, createSession;
   private TextView signedInStatus;
+  private ConnectionDetector internetStatus;
   
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -23,8 +24,7 @@ public class MainActivity extends Activity implements OnClickListener
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    //Good place for singleton injection
-    
+    internetStatus = new ConnectionDetector(this.getBaseContext());
     
     //Get the buttons
     createUser = (Button) findViewById(R.id.createUser);
@@ -56,12 +56,20 @@ public class MainActivity extends Activity implements OnClickListener
       createUser.setText("Create User");
       signedInStatus.setText("Not Signed In");
     }
-    else
+    else if(internetStatus.isConnectingToInternet())
     {
       enableButton(joinSession);
       enableButton(createSession);
+      enableButton(createUser);
       createUser.setText("Change User");
       signedInStatus.setText("Signed in as: " + userName + ", " + email);
+    }
+    else
+    {
+      disableButton(joinSession);
+      disableButton(createSession);
+      disableButton(createUser);
+      signedInStatus.setText("Please connect to the internet and reload.");
     }
   }
   

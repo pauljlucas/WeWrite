@@ -151,6 +151,7 @@ public class GetEmailAndDisplayName extends Activity
       editor.commit();
       
       mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
+      super.onBackPressed();
     }
   }
 }

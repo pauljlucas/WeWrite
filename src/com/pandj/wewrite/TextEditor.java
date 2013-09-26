@@ -8,22 +8,49 @@ import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.Editable;
-import android.text.Selection;
-import android.text.Spannable;
 import android.text.TextWatcher;
+import android.util.AttributeSet;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.Toast;
 
+class EditTextSelection extends EditText
+{
+  private int cursorLocation = 0;
+  public EditTextSelection(Context context, AttributeSet attrs,
+          int defStyle) {
+      super(context, attrs, defStyle);
+
+  }
+
+  public EditTextSelection(Context context, AttributeSet attrs) 
+  {
+      super(context, attrs);
+  }
+
+  public EditTextSelection(Context context) 
+  {
+      super(context);
+  }
+  public int getcursorLocation()
+  {
+    return cursorLocation;
+  }
+  @Override   
+  protected void onSelectionChanged(int selStart, int selEnd) { 
+     cursorLocation = selEnd;
+  } 
+}
 public class TextEditor extends Activity implements OnClickListener
 {
 
-  private EditText textBox;
+  private EditTextSelection textBox;
   private Button undo, redo, disconnect;
   
   private Stack<panCake> localUndoStack;
@@ -35,9 +62,11 @@ public class TextEditor extends Activity implements OnClickListener
   
   private String userName;
   private String email;
-  private ColabrifyClientObject client;
+  private ColabrifyClientObject clientListener;
   private CollabrifyClient myClient;
   
+ 
+ 
   private class customListener implements TextWatcher
   {
 
@@ -61,12 +90,25 @@ public class TextEditor extends Activity implements OnClickListener
       }
       String temp = s.toString();
 
+      panCake toTheStack = new panCake();
+      toTheStack.textBefore = localText;
+      toTheStack.cursorLocationBefore = textBox.getcursorLocation();
       cursorLocation = start + count;
       localText = temp;
-      panCake toTheStack = new panCake();
       toTheStack.textAfter = localText;
       toTheStack.cursorLocationAfter = cursorLocation;
       toTheStack.valid = false;//For right now
+      try
+      {
+        toTheStack.populateDifference();
+      }
+      catch( Exception e )
+      {
+        e.printStackTrace();
+      }
+      //Toast.makeText(getBaseContext(), "Before: " + toTheStack.cursorLocationBefore + " After: " + toTheStack.cursorLocationAfter, Toast.LENGTH_SHORT).show();
+      //Toast.makeText(getBaseContext(), "Diff|" + toTheStack.differText + "|", Toast.LENGTH_SHORT).show();
+
       localUndoStack.push(toTheStack);
       enableButton(undo);
     }
@@ -83,7 +125,6 @@ public class TextEditor extends Activity implements OnClickListener
     {
 
     }
-
  
   }
   private customListener textBoxListener;
@@ -104,19 +145,17 @@ public class TextEditor extends Activity implements OnClickListener
     email = preferences.getString("email","NOTSET");
     userName = preferences.getString("username","NOTSET");
     
-    textBoxListener = new customListener();
-    textBox.addTextChangedListener(textBoxListener);
-    
-    try
+/*    try
     {
-      myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, (CollabrifyListener) textBoxListener);
+      clientListener = new ColabrifyClientObject();
+      myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, clientListener);
     }
     catch( CollabrifyException e )
     {
       e.printStackTrace();
-    }
+    }*/
 
-    textBox = (EditText) findViewById(R.id.editText1);
+    textBox = (EditTextSelection) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
     redo = (Button) findViewById(R.id.redo);
     disconnect = (Button) findViewById(R.id.disconnect);
@@ -124,6 +163,9 @@ public class TextEditor extends Activity implements OnClickListener
     undo.setOnClickListener(this);
     redo.setOnClickListener(this);
     disconnect.setOnClickListener(this);
+    
+    textBoxListener = new customListener();
+    textBox.addTextChangedListener(textBoxListener);
     
     localUndoStack = new Stack<panCake>();
     localRedoStack = new Stack<panCake>();
@@ -154,21 +196,41 @@ public class TextEditor extends Activity implements OnClickListener
     //These could all be encapsulated in a proto buffer class
     String textAfter;
     String textBefore;
+    String differText; 
     int cursorLocationAfter;
     int cursorLocationBefore;
     long globalOrderId;
     boolean valid;
-    
+
     public void changeText(EditText t)
     {
       
+    }
+    
+    public void populateDifference() throws Exception
+    {
+      if(textAfter.length() == textBefore.length())
+      {
+        Exception e = new Exception();
+        throw e;
+      }
+      if(textAfter.length() > textBefore.length())//Insertion
+      {
+        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
+      }
+      else
+      {
+        differText = textBefore.substring(cursorLocationAfter, cursorLocationBefore);
+      }
     }
 
     @Override
     public void run()
     {
-      // TODO Auto-generated method stub
-      
+      textBox.removeTextChangedListener(textBoxListener);
+      textBox.setText(this.textAfter);
+      textBox.setSelection(this.cursorLocationAfter);
+      textBox.addTextChangedListener(textBoxListener);
     }
   }
 
@@ -216,10 +278,7 @@ public class TextEditor extends Activity implements OnClickListener
           {
             disableButton(undo);
           }
-          textBox.removeTextChangedListener(textBoxListener);
-          textBox.setText(obj.textAfter);
-          textBox.setSelection(obj.cursorLocationAfter);
-          textBox.addTextChangedListener(textBoxListener);
+          obj.run();
         }
         break;
       case(R.id.redo) :
@@ -232,10 +291,7 @@ public class TextEditor extends Activity implements OnClickListener
           {
             disableButton(redo);
           }
-          textBox.removeTextChangedListener(textBoxListener);
-          textBox.setText(obj.textAfter);
-          textBox.setSelection(obj.cursorLocationAfter);
-          textBox.addTextChangedListener(textBoxListener);
+          obj.run();
         }
         break;
       case(R.id.disconnect) :

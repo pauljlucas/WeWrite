@@ -41,7 +41,7 @@
         android:background="@color/red"
         android:text="@string/disconnect" />
 
-    <EditText
+    <com.pandj.wewrite.EditTextSelection
         android:id="@+id/editText1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -53,9 +53,7 @@
         android:ems="10"
         android:gravity="top|left"
         android:inputType="textMultiLine"
-        android:scrollbars="vertical" >
+        android:scrollbars="vertical"/>
 
-        <requestFocus />
-    </EditText>
 
 </RelativeLayout>

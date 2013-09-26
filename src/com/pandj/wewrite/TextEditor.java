@@ -145,7 +145,7 @@ public class TextEditor extends Activity implements OnClickListener
     email = preferences.getString("email","NOTSET");
     userName = preferences.getString("username","NOTSET");
     
-/*    try
+    try
     {
       clientListener = new ColabrifyClientObject();
       myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, clientListener);
@@ -153,7 +153,7 @@ public class TextEditor extends Activity implements OnClickListener
     catch( CollabrifyException e )
     {
       e.printStackTrace();
-    }*/
+    }
 
     textBox = (EditTextSelection) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);

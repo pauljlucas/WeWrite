@@ -4,11 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executor;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
 import edu.umich.imlc.collabrify.client.CollabrifyParticipant;
@@ -28,14 +32,14 @@ public class ColabrifyClientObject
   public String sessionName;
   public CollabrifyClient myClient;
   private CustomListener listener;
-  public ColabrifyClientObject(Context input, boolean createSession, String email, String userName)
+  public ColabrifyClientObject(Context input, boolean createSession, String email, String userName, Activity parent)
   {
 	  context = input;
 	  this.createNewSession = createSession;
 	  try 
 	  {
-		listener = new CustomListener();
-		myClient = new CollabrifyClient(context, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, listener);
+		listener = new CustomListener(context, parent);
+		myClient = new CollabrifyClient(context, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", false, listener);
 		if(myClient.inSession())
 		{
 			myClient.leaveSession(true);
@@ -94,6 +98,14 @@ public class ColabrifyClientObject
 
 private class CustomListener implements CollabrifyListener
 {
+  private Context context;
+  private Activity parent;
+  
+  public CustomListener(Context c, Activity p)
+  {
+	  context = c;
+	  parent = p;
+  }
   @Override
   public void onSessionCreated(long id)
   {
@@ -132,7 +144,7 @@ private class CustomListener implements CollabrifyListener
   @Override
   public void onDisconnect()
   {
-    // TODO Auto-generated method stub
+    Log.i("CCO", "Disconnect Triggered in Listener");
 
   }
 
@@ -150,6 +162,15 @@ private class CustomListener implements CollabrifyListener
     if( sessionList.isEmpty())
     {
     	Log.i("CCO", "No Session Available using Tags: " + tags.get(0));
+    	parent.runOnUiThread(new Runnable()
+    	{
+    		@Override
+    		public void run()
+    		{
+    	    	Toast.makeText(context, "No possible Sessions to Join", Toast.LENGTH_SHORT).show();
+    	        parent.finish();
+    		}
+    	});
     	return;
     }
     List<String> sessionNames = new ArrayList<String>();
@@ -176,9 +197,16 @@ private class CustomListener implements CollabrifyListener
 					}
 				}
 			});
+    parent.runOnUiThread(new Runnable()
+    {
+		@Override
+		public void run() {
+			builder.show();
+		}
+    });
   }
 
-  @Override
+@Override
   public void onParticipantJoined(CollabrifyParticipant p)
   {
     // TODO Auto-generated method stub

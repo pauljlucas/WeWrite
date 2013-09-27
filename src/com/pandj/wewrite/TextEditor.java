@@ -142,7 +142,7 @@ public class TextEditor extends Activity implements OnClickListener
     Bundle extras = getIntent().getExtras();
     createNewSession = extras.getBoolean("Create");
     
-	clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession, email, userName);
+	clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession, email, userName, this);
 	clientListener.enterSession();
       
 

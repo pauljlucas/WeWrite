@@ -1,6 +1,8 @@
 package com.pandj.wewrite;
 
 import java.util.Stack;
+import com.pandj.wewrite.javaProtoOutput;
+import com.pandj.wewrite.javaProtoOutput.protoData;
 
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
@@ -98,6 +100,12 @@ public class TextEditor extends Activity implements OnClickListener
       toTheStack.textAfter = localText;
       toTheStack.cursorLocationAfter = cursorLocation;
       toTheStack.valid = false;//For right now
+      toTheStack.protoBuff.setTextBefore(toTheStack.textBefore);
+      toTheStack.protoBuff.setTextAfter(toTheStack.textAfter);
+      toTheStack.protoBuff.setCursorLocationAfter(toTheStack.cursorLocationAfter);
+      toTheStack.protoBuff.setCursorLocationBefore(toTheStack.cursorLocationBefore);
+      toTheStack.protoBuff.setValid(toTheStack.valid);
+      
       try
       {
         toTheStack.populateDifference();
@@ -176,6 +184,9 @@ public class TextEditor extends Activity implements OnClickListener
     panCake edgeCase = new panCake();
     edgeCase.textAfter = localText;
     edgeCase.valid = true;
+    edgeCase.protoBuff.setValid(edgeCase.valid);
+    edgeCase.protoBuff.setTextAfter(localText);
+
     
     localUndoStack.push(edgeCase);
     
@@ -201,6 +212,8 @@ public class TextEditor extends Activity implements OnClickListener
     int cursorLocationBefore;
     long globalOrderId;
     boolean valid;
+    protoData.Builder protoBuff = protoData.newBuilder();
+
 
     public void changeText(EditText t)
     {

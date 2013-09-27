@@ -104,20 +104,24 @@ public class MainActivity extends Activity implements OnClickListener
   @Override
   public void onClick(View v)
   {
+	Intent nextScreen = null;
     switch(v.getId())
     {
       case(R.id.createSession) :
+          nextScreen = new Intent(this, TextEditor.class);
+       	  nextScreen.putExtra("Create", true);
+          startActivity(nextScreen);
         break;
       
       case(R.id.createUser) :
-        Intent getInfo = new Intent(this, GetEmailAndDisplayName.class);
-        startActivity(getInfo);
+          nextScreen = new Intent(this, GetEmailAndDisplayName.class);
+          startActivity(nextScreen);
         break;
         
       case(R.id.joinSession) :
-        //Not the actual implementation, I just want to be able to get to the text box screen
-        Intent textEdit = new Intent(this, TextEditor.class);
-        startActivity(textEdit);
+	      nextScreen = new Intent(this, TextEditor.class);
+	   	  nextScreen.putExtra("Create", false);
+	      startActivity(nextScreen);
         break;
     }
   

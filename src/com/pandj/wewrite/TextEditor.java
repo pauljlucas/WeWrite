@@ -210,7 +210,7 @@ public class TextEditor extends Activity implements OnClickListener
 	    }
   }
   
-  private class panCake 
+  public class panCake 
   {
     protected protoData.Builder protoBuff = protoData.newBuilder();
     protected protoData data = null;
@@ -257,9 +257,27 @@ public class TextEditor extends Activity implements OnClickListener
 	    }
   }
   
-  private class panCakeRemote extends panCake implements Runnable 
+  public class panCakeRemote extends panCake implements Runnable 
   {
-
+    public panCakeRemote(byte[] input) 
+    {
+    	try 
+    	{
+			data = protoData.parseFrom(input);
+			state.cursorLocationAfter = data.getCursorLocationAfter();
+			state.cursorLocationBefore = data.getCursorLocationBefore();
+			state.valid = data.getValid();
+			state.globalOrderId = data.getGlobalOrderId();
+			state.textAfter = data.getTextAfter();
+			state.textBefore = data.getTextBefore();
+			state.differText = data.getDifferText();
+		} catch (InvalidProtocolBufferException e) 
+		{
+			e.printStackTrace();
+		}
+    	this.run();
+	}
+    
 	@Override
 	public void run() 
 	{
@@ -338,7 +356,7 @@ public class TextEditor extends Activity implements OnClickListener
         }
         break;
       case(R.id.disconnect) :
-    	clientListener.disconnect();
+    	clientListener.destroy();
       	this.finish();
         break;
     }

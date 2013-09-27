@@ -1,5 +1,10 @@
 package com.pandj.wewrite;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -102,19 +107,42 @@ public class TextEditor extends Activity implements OnClickListener
       String temp = s.toString();
 
       panCake toTheStack = new panCake();
-      toTheStack.textBefore = localText;
-      toTheStack.cursorLocationBefore = textBox.getcursorLocation();
+      toTheStack.EditTextBefore(localText);
+      toTheStack.EditcursorLocationBefore(textBox.getcursorLocation());
       cursorLocation = start + count;
       localText = temp;
-      toTheStack.textAfter = localText;
-      toTheStack.cursorLocationAfter = cursorLocation;
-      toTheStack.valid = false;//For right now
-      toTheStack.protoBuff.setTextBefore(toTheStack.textBefore);
-      toTheStack.protoBuff.setTextAfter(toTheStack.textAfter);
-      toTheStack.protoBuff.setCursorLocationAfter(toTheStack.cursorLocationAfter);
-      toTheStack.protoBuff.setCursorLocationBefore(toTheStack.cursorLocationBefore);
-      toTheStack.protoBuff.setValid(toTheStack.valid);
+      toTheStack.EditTextAfter(localText);
+      toTheStack.EditcursorLocationAfter(cursorLocation);
+      toTheStack.EditValid(false);//For right now
       
+      //How to convert. This may or may not work...DELETE THIS
+      byte[] bptest = null;
+      protoData.Builder test = null; 
+      try
+      {
+        bptest = BytePrep.toBytes(toTheStack.protoBuff);
+      }
+      catch( IOException e1 )
+      {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+      try
+      {
+        test =   (protoData.Builder) BytePrep.fromBytes(bptest);
+      }
+      catch( IOException e1 )
+      {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+      catch( ClassNotFoundException e1 )
+      {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+      
+      //END DELETE THIS
       try
       {
         toTheStack.populateDifference();
@@ -204,10 +232,8 @@ public class TextEditor extends Activity implements OnClickListener
     cursorLocation = 0;
 
     panCake edgeCase = new panCake();
-    edgeCase.textAfter = localText;
-    edgeCase.valid = true;
-    edgeCase.protoBuff.setValid(edgeCase.valid);
-    edgeCase.protoBuff.setTextAfter(localText);
+    edgeCase.EditTextAfter(localText);
+    edgeCase.EditValid(true);
 
     
     localUndoStack.push(edgeCase);
@@ -235,6 +261,35 @@ public class TextEditor extends Activity implements OnClickListener
     long globalOrderId;
     boolean valid;
     protoData.Builder protoBuff = protoData.newBuilder();
+    
+    public void EditTextAfter(String a){
+      textAfter = a;
+      protoBuff.setTextAfter(a);
+    }
+    public void EditTextBefore(String b){
+      textBefore = b;
+      protoBuff.setTextBefore(b);
+    }
+    public void EditDifferText(String c){
+      differText = c;
+      protoBuff.setDifferText(c);
+    }
+    public void EditcursorLocationAfter(int d){
+      cursorLocationAfter = d;
+      protoBuff.setCursorLocationAfter(d);
+    }
+    public void EditcursorLocationBefore(int e){
+      cursorLocationBefore = e;
+      protoBuff.setCursorLocationBefore(e);
+    }
+    public void EditGlobalOrderId(long f){
+      globalOrderId = f;
+      protoBuff.setGlobalOrderId(f);
+    }
+    public void EditValid(boolean g){
+      valid = g;
+      protoBuff.setValid(g);
+    }
 
 
     public void changeText(EditText t)
@@ -268,7 +323,36 @@ public class TextEditor extends Activity implements OnClickListener
       textBox.addTextChangedListener(textBoxListener);
     }
   }
+  
+  private class panCakeLocal extends panCake 
+  {
 
+  }
+  
+  private class panCakeRemote extends panCake 
+  {
+    //send and receive functions for both
+    //Also make it so that when something is added it adds it to both protocol buffers and local vars
+    //LOOK FOR BYTE ARRAY IN HOWTO Set up collabrify
+    
+  }
+  
+  public static class BytePrep {
+    public static byte[] toBytes(Object obj) throws IOException {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+        oOut.writeObject(obj);
+        return bOut.toByteArray();
+    }
+
+    public static Object fromBytes(byte[] data) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
+        ObjectInputStream oIn = new ObjectInputStream(bIn);
+        return oIn.readObject();
+    }
+}
+  
+  
   private void disableButton(Button b)
   {
     b.setClickable(false);

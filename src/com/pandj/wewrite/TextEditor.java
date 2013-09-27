@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Stack;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.pandj.wewrite.javaProtoOutput;
 import com.pandj.wewrite.javaProtoOutput.protoData;
 
@@ -65,8 +67,8 @@ public class TextEditor extends Activity implements OnClickListener
   private EditTextSelection textBox;
   private Button undo, redo, disconnect;
   
-  private Stack<panCake> localUndoStack;
-  private Stack<panCake> localRedoStack;
+  private Stack<panCakeLocal> localUndoStack;
+  private Stack<panCakeLocal> localRedoStack;
   private Stack<panCake> remoteStack;
   
   private String localText;
@@ -85,71 +87,22 @@ public class TextEditor extends Activity implements OnClickListener
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
-      //This is the correct one to use. As long as we push the first string to the stack.
-      //s is the entirety of the string that is going to show up after this key press
-      int secondCut;
-      if(before < count)//Insertion
-      {
-        secondCut = start + before;
-      }
-      else if( before == count)//Might caused issues with swap but fixes the triple stack problem
-      {
-        return;
-      }
-      else//Deletion
-      {
-        secondCut = localText.length();
-      }
       String temp = s.toString();
 
-      panCake toTheStack = new panCake();
-      toTheStack.EditTextBefore(localText);
-      toTheStack.EditcursorLocationBefore(textBox.getcursorLocation());
+      panCakeLocal toTheStack = new panCakeLocal();
+      StateInfo insert = new StateInfo();
+      insert.textBefore = localText;
+      insert.cursorLocationBefore = textBox.getcursorLocation();
+      
       cursorLocation = start + count;
       localText = temp;
-      toTheStack.EditTextAfter(localText);
-      toTheStack.EditcursorLocationAfter(cursorLocation);
-      toTheStack.EditValid(false);//For right now
       
-      //How to convert. This may or may not work...DELETE THIS
-      byte[] bptest = null;
-      protoData.Builder test = null; 
-      try
-      {
-        bptest = BytePrep.toBytes(toTheStack.protoBuff);
-      }
-      catch( IOException e1 )
-      {
-        // TODO Auto-generated catch block
-        e1.printStackTrace();
-      }
-      try
-      {
-        test =   (protoData.Builder) BytePrep.fromBytes(bptest);
-      }
-      catch( IOException e1 )
-      {
-        // TODO Auto-generated catch block
-        e1.printStackTrace();
-      }
-      catch( ClassNotFoundException e1 )
-      {
-        // TODO Auto-generated catch block
-        e1.printStackTrace();
-      }
+      insert.textAfter = localText;
+      insert.cursorLocationAfter = cursorLocation;
+      insert.valid = false;;//For right now
+      insert.populateDifference();
+      toTheStack.InsertLocalData(insert);
       
-      //END DELETE THIS
-      try
-      {
-        toTheStack.populateDifference();
-      }
-      catch( Exception e )
-      {
-        e.printStackTrace();
-      }
-      //Toast.makeText(getBaseContext(), "Before: " + toTheStack.cursorLocationBefore + " After: " + toTheStack.cursorLocationAfter, Toast.LENGTH_SHORT).show();
-      //Toast.makeText(getBaseContext(), "Diff|" + toTheStack.differText + "|", Toast.LENGTH_SHORT).show();
-
       localUndoStack.push(toTheStack);
       enableButton(undo);
     }
@@ -205,17 +158,23 @@ public class TextEditor extends Activity implements OnClickListener
     textBoxListener = new customListener();
     textBox.addTextChangedListener(textBoxListener);
     
-    localUndoStack = new Stack<panCake>();
-    localRedoStack = new Stack<panCake>();
+    localUndoStack = new Stack<panCakeLocal>();
+    localRedoStack = new Stack<panCakeLocal>();
 
-    localText = "";//This will change if we are joining an already existing session
+    if(createNewSession)
+    {
+      localText = "";
+      cursorLocation = 0;	
+    }
+    //Need to get the server state.
+    localText = "";
     cursorLocation = 0;
 
-    panCake edgeCase = new panCake();
-    edgeCase.EditTextAfter(localText);
-    edgeCase.EditValid(true);
-
-    
+    panCakeLocal edgeCase = new panCakeLocal();
+    StateInfo s = new StateInfo();
+    s.textAfter = localText;
+    s.valid = true;
+    edgeCase.InsertLocalData(s);
     localUndoStack.push(edgeCase);
     
     
@@ -224,112 +183,92 @@ public class TextEditor extends Activity implements OnClickListener
     
 
   }
-  
-  private class panCake implements Runnable 
+
+  private class StateInfo
   {
-    
-    void panCake(ColabrifyClientObject c)
-    {
-      
-    }
-    //These could all be encapsulated in a proto buffer class
-    String textAfter;
-    String textBefore;
-    String differText; 
-    int cursorLocationAfter;
-    int cursorLocationBefore;
-    long globalOrderId;
-    boolean valid;
-    protoData.Builder protoBuff = protoData.newBuilder();
-    
-    public void EditTextAfter(String a){
-      textAfter = a;
-      protoBuff.setTextAfter(a);
-    }
-    public void EditTextBefore(String b){
-      textBefore = b;
-      protoBuff.setTextBefore(b);
-    }
-    public void EditDifferText(String c){
-      differText = c;
-      protoBuff.setDifferText(c);
-    }
-    public void EditcursorLocationAfter(int d){
-      cursorLocationAfter = d;
-      protoBuff.setCursorLocationAfter(d);
-    }
-    public void EditcursorLocationBefore(int e){
-      cursorLocationBefore = e;
-      protoBuff.setCursorLocationBefore(e);
-    }
-    public void EditGlobalOrderId(long f){
-      globalOrderId = f;
-      protoBuff.setGlobalOrderId(f);
-    }
-    public void EditValid(boolean g){
-      valid = g;
-      protoBuff.setValid(g);
-    }
-
-
-    public void changeText(EditText t)
-    {
-      
-    }
-    
-    public void populateDifference() throws Exception
-    {
-      if(textAfter.length() == textBefore.length())
-      {
-        Exception e = new Exception();
-        throw e;
-      }
-      if(textAfter.length() > textBefore.length())//Insertion
-      {
-        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
-      }
-      else
-      {
-        differText = textBefore.substring(cursorLocationAfter, cursorLocationBefore);
-      }
-    }
-
-    @Override
-    public void run()
-    {
-      textBox.removeTextChangedListener(textBoxListener);
-      textBox.setText(this.textAfter);
-      textBox.setSelection(this.cursorLocationAfter);
-      textBox.addTextChangedListener(textBoxListener);
-    }
+		public String textAfter = "";
+		public String textBefore = "";
+		public String differText = ""; 
+		public int cursorLocationAfter = 0 ;
+		public int cursorLocationBefore = 0;
+		public long globalOrderId = 0;
+		public boolean valid = false;
+	    public void populateDifference() 
+	    {
+	      if(textAfter.length() == textBefore.length())
+	      {
+	    	  differText = "";
+	      }
+	      if(textAfter.length() > textBefore.length())//Insertion
+	      {
+	        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
+	      }
+	      else
+	      {
+	        differText = textBefore.substring(cursorLocationAfter, cursorLocationBefore);
+	      }
+	    }
   }
   
-  private class panCakeLocal extends panCake 
+  private class panCake 
   {
-
+    protected protoData.Builder protoBuff = protoData.newBuilder();
+    protected protoData data = null;
+    protected StateInfo state;
+    
   }
   
-  private class panCakeRemote extends panCake 
+  private class panCakeLocal extends panCake implements Runnable 
   {
+	    public void InsertLocalData(StateInfo insert)
+	    {
+	    	state = insert;
+	    	protoBuff.setTextAfter(insert.textAfter);
+	    	protoBuff.setTextBefore(insert.textBefore);
+	    	protoBuff.setValid(insert.valid);
+	    	protoBuff.setGlobalOrderId(insert.globalOrderId);
+	    	protoBuff.setCursorLocationBefore(insert.cursorLocationBefore);
+	    	protoBuff.setCursorLocationAfter(insert.cursorLocationAfter);
+	    	protoBuff.setDifferText(insert.differText);
+	    	
+	    	data = protoBuff.build();
+	    	byte[] test = data.toByteArray();
+	    	try {
+				protoData check = protoData.parseFrom(test);
+				if(check == data)
+				{
+					Toast.makeText(getApplicationContext(), "It worked!", Toast.LENGTH_SHORT).show();
+				}
+			} catch (InvalidProtocolBufferException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    	
+	    }
+	    
+	    @Override
+	    public void run()
+	    {
+	      //Send it over the wire!
+	      textBox.removeTextChangedListener(textBoxListener);
+	      textBox.setText(this.state.textAfter);
+	      textBox.setSelection(this.state.cursorLocationAfter);
+	      textBox.addTextChangedListener(textBoxListener);
+	    }
+  }
+  
+  private class panCakeRemote extends panCake implements Runnable 
+  {
+
+	@Override
+	public void run() 
+	{
+		// TODO Auto-generated method stub
+		
+	}
     //send and receive functions for both
     //Also make it so that when something is added it adds it to both protocol buffers and local vars
     //LOOK FOR BYTE ARRAY IN HOWTO Set up collabrify
-    
-  }
-  
-  public static class BytePrep {
-    public static byte[] toBytes(Object obj) throws IOException {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
-        oOut.writeObject(obj);
-        return bOut.toByteArray();
-    }
-
-    public static Object fromBytes(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
-        ObjectInputStream oIn = new ObjectInputStream(bIn);
-        return oIn.readObject();
-    }
 }
   
   
@@ -374,7 +313,7 @@ public class TextEditor extends Activity implements OnClickListener
       case(R.id.undo) :
         if(!localUndoStack.isEmpty())
         {
-          panCake obj = localUndoStack.pop();
+          panCakeLocal obj = localUndoStack.pop();
           //Might need to change validity later
           localRedoStack.push(obj);
           enableButton(redo);
@@ -388,7 +327,7 @@ public class TextEditor extends Activity implements OnClickListener
       case(R.id.redo) :
         if(!localRedoStack.isEmpty())
         {
-          panCake obj = localRedoStack.pop();
+          panCakeLocal obj = localRedoStack.pop();
           localUndoStack.push(obj);
           enableButton(undo);
           if(localRedoStack.isEmpty())

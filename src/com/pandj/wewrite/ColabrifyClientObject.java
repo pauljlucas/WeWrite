@@ -21,7 +21,7 @@ public class ColabrifyClientObject implements CollabrifyListener
   private long sessionId;
   private Context context;
   private boolean createNewSession;
-  private final List<String> tags = Arrays.asList("jbarno", "lucaspa");
+  private final List<String> tags = Arrays.asList("");
 
   
   public String sessionName;
@@ -43,6 +43,7 @@ public class ColabrifyClientObject implements CollabrifyListener
   public void onSessionCreated(long id)
   {
     sessionId = id;
+    Log.i("CCO", "Session created.");
   }
 
   @Override
@@ -93,7 +94,7 @@ public class ColabrifyClientObject implements CollabrifyListener
   {
     if( sessionList.isEmpty())
     {
-    	Log.i("CCO", "No Session Available");
+    	Log.i("CCO", "No Session Available using Tags: " + tags.get(0));
     	return;
     }
     List<String> sessionNames = new ArrayList<String>();
@@ -158,6 +159,7 @@ public void enterSession()
   	  Random rand = new Random();
   	  sessionName = "Test" + rand.nextInt();
   	  myClient.createSession(sessionName, tags, null, 10);
+  	  Log.i("CCO", "Attempting to Create Session");
     }
     else
     {

@@ -70,11 +70,7 @@ public class TextEditor extends Activity implements OnClickListener
   private String userName;
   private String email;
   private ColabrifyClientObject clientListener;
-  private CollabrifyClient myClient;
-  private String sessionName;
-  
-  private final List<String> tags = Arrays.asList("jbarno", "lucaspa");
- 
+  private String sessionName; 
  
   private class customListener implements TextWatcher
   {
@@ -142,7 +138,7 @@ public class TextEditor extends Activity implements OnClickListener
   protected void onResume()
   {
     super.onResume();
-    
+    this.setTitle(clientListener.sessionName);
   }
   @Override
   protected void onCreate(Bundle savedInstanceState)
@@ -156,26 +152,10 @@ public class TextEditor extends Activity implements OnClickListener
     
     Bundle extras = getIntent().getExtras();
     createNewSession = extras.getBoolean("Create");
-    try
-    {
-      clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession);
-      //myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, clientListener);
-      if(createNewSession)
-      {
-    	  Random rand = new Random();
-    	  sessionName = "Test" + rand.nextInt();
-    	  myClient.createSession(sessionName, tags, null, 10);
-    	  this.setTitle(sessionName);
-      }
-      else
-      {
-    	  myClient.requestSessionList(tags);
-      }
-    }
-    catch( CollabrifyException e )
-    {
-      e.printStackTrace();
-    }
+    
+	clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession, email, userName);
+	clientListener.enterSession();
+      
 
     textBox = (EditTextSelection) findViewById(R.id.editText1);
     undo = (Button) findViewById(R.id.undo);
@@ -287,23 +267,7 @@ public class TextEditor extends Activity implements OnClickListener
   protected void onDestroy()
   {
 	  super.onDestroy();    	
-	  if(myClient.inSession())
-  	  {
-  		try 
-  		{
-  			//If we are the creator and leaving, we want the session destroyed
-  			myClient.leaveSession(createNewSession);
-		} 
-  		catch (LeaveException e) 
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CollabrifyException e) 
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-  	}
+	  clientListener.destroy();
   }
   @Override
   public void onClick(View v)
@@ -338,22 +302,8 @@ public class TextEditor extends Activity implements OnClickListener
         }
         break;
       case(R.id.disconnect) :
-    	if(myClient.inSession())
-    	{
-    		try 
-    		{
-				myClient.leaveSession(false);
-				this.finish();
-			} catch (LeaveException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CollabrifyException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-    	}
+    	clientListener.disconnect();
+      	this.finish();
         break;
     }
   }

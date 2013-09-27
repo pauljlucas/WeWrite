@@ -1,7 +1,9 @@
 package com.pandj.wewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -12,19 +14,30 @@ import edu.umich.imlc.collabrify.client.CollabrifyListener;
 import edu.umich.imlc.collabrify.client.CollabrifyParticipant;
 import edu.umich.imlc.collabrify.client.CollabrifySession;
 import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
+import edu.umich.imlc.collabrify.client.exceptions.LeaveException;
 
 public class ColabrifyClientObject implements CollabrifyListener
 {
   private long sessionId;
   private Context context;
-  private boolean createSession;
+  private boolean createNewSession;
+  private final List<String> tags = Arrays.asList("jbarno", "lucaspa");
+
   
   public String sessionName;
   public CollabrifyClient myClient;
-  public ColabrifyClientObject(Context input, boolean createSession)
+  public ColabrifyClientObject(Context input, boolean createSession, String email, String userName)
   {
 	  context = input;
-	  this.createSession = createSession;
+	  this.createNewSession = createSession;
+	  try 
+	  {
+		myClient = new CollabrifyClient(context, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, this);
+	  } catch (CollabrifyException e) 
+	  {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	  }
   }
   @Override
   public void onSessionCreated(long id)
@@ -136,5 +149,63 @@ public class ColabrifyClientObject implements CollabrifyListener
     // TODO Auto-generated method stub
 
   }
+public void enterSession() 
+{
+  try
+  {
+    if(createNewSession)
+    {
+  	  Random rand = new Random();
+  	  sessionName = "Test" + rand.nextInt();
+  	  myClient.createSession(sessionName, tags, null, 10);
+    }
+    else
+    {
+  	  myClient.requestSessionList(tags);
+    }
+  }
+  catch( CollabrifyException e )
+  {
+    e.printStackTrace();
+  }	
+}
+public void disconnect() 
+{
+	if(myClient.inSession())
+	{
+		try 
+		{
+			myClient.leaveSession(false);
+		} catch (LeaveException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CollabrifyException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}
+public void destroy() 
+{
+	if(myClient.inSession())
+	  {
+		try 
+		{
+			//If we are the creator and leaving, we want the session destroyed
+			myClient.leaveSession(createNewSession);
+		} 
+		catch (LeaveException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CollabrifyException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  }
+}
 
 }

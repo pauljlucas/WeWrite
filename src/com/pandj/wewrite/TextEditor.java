@@ -1,5 +1,8 @@
 package com.pandj.wewrite;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.Stack;
 import com.pandj.wewrite.javaProtoOutput;
 import com.pandj.wewrite.javaProtoOutput.protoData;
@@ -7,6 +10,7 @@ import com.pandj.wewrite.javaProtoOutput.protoData;
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
 import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
+import edu.umich.imlc.collabrify.client.exceptions.LeaveException;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
@@ -49,6 +53,7 @@ class EditTextSelection extends EditText
      cursorLocation = selEnd;
   } 
 }
+
 public class TextEditor extends Activity implements OnClickListener
 {
 
@@ -62,11 +67,15 @@ public class TextEditor extends Activity implements OnClickListener
   private String localText;
   private int cursorLocation;
   
+  private boolean createNewSession;
+  
   private String userName;
   private String email;
   private ColabrifyClientObject clientListener;
   private CollabrifyClient myClient;
+  private String sessionName;
   
+  private final List<String> tags = Arrays.asList("jbarno", "lucaspa");
  
  
   private class customListener implements TextWatcher
@@ -153,10 +162,23 @@ public class TextEditor extends Activity implements OnClickListener
     email = preferences.getString("email","NOTSET");
     userName = preferences.getString("username","NOTSET");
     
+    Bundle extras = getIntent().getExtras();
+    createNewSession = extras.getBoolean("Create");
     try
     {
-      clientListener = new ColabrifyClientObject();
-      myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, clientListener);
+      clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession);
+      //myClient = new CollabrifyClient(this, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", true, clientListener);
+      if(createNewSession)
+      {
+    	  Random rand = new Random();
+    	  sessionName = "Test" + rand.nextInt();
+    	  myClient.createSession(sessionName, tags, null, 10);
+    	  this.setTitle(sessionName);
+      }
+      else
+      {
+    	  myClient.requestSessionList(tags);
+      }
     }
     catch( CollabrifyException e )
     {
@@ -274,7 +296,28 @@ public class TextEditor extends Activity implements OnClickListener
     getMenuInflater().inflate(R.menu.text_editor, menu);
     return true;
   }
-
+  @Override
+  protected void onDestroy()
+  {
+	  super.onDestroy();    	
+	  if(myClient.inSession())
+  	  {
+  		try 
+  		{
+  			//If we are the creator and leaving, we want the session destroyed
+  			myClient.leaveSession(createNewSession);
+		} 
+  		catch (LeaveException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CollabrifyException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+  	}
+  }
   @Override
   public void onClick(View v)
   {
@@ -308,6 +351,22 @@ public class TextEditor extends Activity implements OnClickListener
         }
         break;
       case(R.id.disconnect) :
+    	if(myClient.inSession())
+    	{
+    		try 
+    		{
+				myClient.leaveSession(false);
+				this.finish();
+			} catch (LeaveException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (CollabrifyException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
         break;
     }
   }

@@ -1,5 +1,8 @@
 package com.pandj.wewrite;
 
+import com.pandj.wewrite.javaProtoOutput;
+import com.pandj.wewrite.javaProtoOutput.protoData;
+
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
@@ -37,6 +40,14 @@ public class MainActivity extends Activity implements OnClickListener
     createUser.setOnClickListener(this);
     joinSession.setOnClickListener(this);
     createSession.setOnClickListener(this);
+    
+    
+    //PROTO EXAMPLE
+    protoData.Builder protoShit = protoData.newBuilder();
+    protoShit.setTextAfter("blah");
+    long longNum = 21421412;
+    protoShit.setGlobalOrderId(longNum);
+    //END EXAMPLE
     
   }
 

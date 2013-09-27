@@ -1,0 +1,1 @@
+package WeWrite;option java_package = "com.pandj.wewrite";option java_outer_classname = "protoData";protoData{   optional string textAfter = 1;   optional string textBefore = 2;   optional string differText = 3;    optional int32 cursorLocationAfter = 4;   optional int32 cursorLocationBefore = 5;   optional int64 globalOrderId = 6;   optional boolean valid = 7;}

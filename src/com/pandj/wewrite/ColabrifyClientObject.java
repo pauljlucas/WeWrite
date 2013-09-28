@@ -32,7 +32,6 @@ public class ColabrifyClientObject
   
   public String sessionName;
   public CollabrifyClient myClient;
-  private CustomListener listener;
   private CustomAdapter adapter;
   public ColabrifyClientObject(Context input, boolean createSession, String email, String userName, Activity parent)
   {
@@ -40,7 +39,6 @@ public class ColabrifyClientObject
 	  this.createNewSession = createSession;
 	  try 
 	  {
-		listener = new CustomListener(context, parent);
 		adapter = new CustomAdapter(parent);
 		myClient = new CollabrifyClient(parent, email, userName, "441fall2013@umich.edu", "XY3721425NoScOpE", false, adapter);
 		if(myClient.inSession())
@@ -184,144 +182,5 @@ private class CustomAdapter extends CollabrifyAdapter
 	  e.printStackTrace();
   }
 
-}
-
-private class CustomListener implements CollabrifyListener
-{
-  private Context context;
-  private Activity parent;
-  
-  public CustomListener(Context c, Activity p)
-  {
-	  context = c;
-	  parent = p;
-  }
-  @Override
-  public void onSessionCreated(long id)
-  {
-    sessionId = id;
-    Log.i("CCO", "Session created.");
-  }
-
-  @Override
-  public byte[] onBaseFileChunkRequested(long currentBaseFileSize)
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public void onBaseFileUploadComplete(long baseFileSize)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onSessionJoined(long maxOrderId, long baseFileSize)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onBaseFileChunkReceived(byte[] baseFileChunk)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onDisconnect()
-  {
-    Log.i("CCO", "Disconnect Triggered in Listener");
-
-  }
-
-  @Override
-  public void onReceiveEvent(long orderId, int submissionRegistrationId,
-      String eventType, byte[] data)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onReceiveSessionList(final List<CollabrifySession> sessionList)
-  {
-    if( sessionList.isEmpty())
-    {
-    	Log.i("CCO", "No Session Available using Tags: " + tags.get(0));
-    	parent.runOnUiThread(new Runnable()
-    	{
-    		@Override
-    		public void run()
-    		{
-    	    	Toast.makeText(context, "No possible Sessions to Join", Toast.LENGTH_SHORT).show();
-    	        parent.finish();
-    		}
-    	});
-    	return;
-    }
-    List<String> sessionNames = new ArrayList<String>();
-    for(CollabrifySession s : sessionList)
-    {
-    	sessionNames.add(s.name());
-    }
-    final AlertDialog.Builder builder = new AlertDialog.Builder(context);
-    builder.setTitle("Choose a session").setItems(
-    		sessionNames.toArray(new String[sessionList.size()]), 
-    		new DialogInterface.OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					try
-					{
-						sessionId = sessionList.get(which).id();
-						sessionName = sessionList.get(which).name();
-						myClient.joinSession(sessionId, null);
-					}
-					catch( CollabrifyException e)
-					{
-						Log.i("CCO", "Join Session Failed", e);
-					}
-				}
-			});
-    parent.runOnUiThread(new Runnable()
-    {
-		@Override
-		public void run() {
-			builder.show();
-		}
-    });
-  }
-
-@Override
-  public void onParticipantJoined(CollabrifyParticipant p)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onParticipantLeft(CollabrifyParticipant p)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onError(CollabrifyException e)
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void onSessionEnd(long id)
-  {
-    // TODO Auto-generated method stub
-
-  }
 }
 }

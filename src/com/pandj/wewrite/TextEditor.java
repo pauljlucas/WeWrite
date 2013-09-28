@@ -361,5 +361,6 @@ public class TextEditor extends Activity implements OnClickListener
         break;
     }
   }
+  
 
 }

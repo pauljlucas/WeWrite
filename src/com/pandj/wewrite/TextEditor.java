@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -16,16 +17,21 @@ import com.pandj.wewrite.javaProtoOutput.protoData;
 
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
+import edu.umich.imlc.collabrify.client.CollabrifyParticipant;
+import edu.umich.imlc.collabrify.client.CollabrifySession;
 import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
 import edu.umich.imlc.collabrify.client.exceptions.LeaveException;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -61,7 +67,7 @@ class EditTextSelection extends EditText
   } 
 }
 
-public class TextEditor extends Activity implements OnClickListener
+public class TextEditor extends Activity implements OnClickListener, CollabrifyListener
 {
 
   private EditTextSelection textBox;
@@ -80,8 +86,107 @@ public class TextEditor extends Activity implements OnClickListener
   private String email;
   private ColabrifyClientObject clientListener;
   private String sessionName; 
- 
-  private class customListener implements TextWatcher
+  private long sessionId;
+  private long orderId;
+  
+  //CollabrifyListener Functions
+  @Override
+  public void onSessionCreated(long id)
+  {
+    sessionId = id;
+    Log.i("CCO", "Session created.");
+  }
+  @Override
+  public void onSessionJoined(long maxOrderId, long baseFileSize)
+  {
+    Log.i("CCO", "SessionJoinedCalled");
+    if(baseFileSize != 0)
+    {
+    	Log.i("CCO", "Joined session with basefile!");
+    	finish();
+    }
+    orderId = maxOrderId;
+  }
+  @Override
+  public void onReceiveSessionList(final List<CollabrifySession> sessionList)
+  {
+    if( sessionList.isEmpty())
+    {
+    	Log.i("CCO", "No Session Available using Tags: " + clientListener.tags.get(0));
+    	runOnUiThread(new Runnable()
+    	{
+    		@Override
+    		public void run()
+    		{
+    	    	Toast.makeText(getBaseContext(), "No possible Sessions to Join", Toast.LENGTH_SHORT).show();
+    	        finish();
+    		}
+    	});
+    	return;
+    }
+    List<String> sessionNames = new ArrayList<String>();
+    for(CollabrifySession s : sessionList)
+    {
+    	sessionNames.add(s.name());
+    }
+    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle("Choose a session").setItems(
+    		sessionNames.toArray(new String[sessionList.size()]), 
+    		new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					try
+					{
+						sessionId = sessionList.get(which).id();
+						sessionName = sessionList.get(which).name();
+						clientListener.myClient.joinSession(sessionId, null);
+					}
+					catch( CollabrifyException e)
+					{
+						Log.i("CCO", "Join Session Failed", e);
+						finish();
+					}
+				}
+			});
+    runOnUiThread(new Runnable()
+    {
+		@Override
+		public void run() {
+				try{
+				  builder.show();
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+		}
+    });
+  }
+  @Override
+  public void onReceiveEvent(long orderId, int submissionRegistrationId,
+      String eventType, byte[] data)
+  {
+	  Log.i("CCO", "Event recieved");
+  }
+
+  @Override
+  public void onDisconnect()
+  {
+    Log.i("CCO", "Disconnect Triggered in Listener");
+
+  }
+  @Override 
+  public void onError(CollabrifyException e)
+  {
+	  e.printStackTrace();
+  }
+  
+  
+  
+  
+  
+  private class customListener implements TextWatcher 
   {
 
     @Override
@@ -142,7 +247,7 @@ public class TextEditor extends Activity implements OnClickListener
     Bundle extras = getIntent().getExtras();
     createNewSession = extras.getBoolean("Create");
     
-	clientListener = new ColabrifyClientObject(this.getBaseContext(), createNewSession, email, userName, this);
+	clientListener = new ColabrifyClientObject(getBaseContext(), createNewSession, email, userName, this);
 	clientListener.enterSession();
       
 
@@ -361,6 +466,36 @@ public class TextEditor extends Activity implements OnClickListener
         break;
     }
   }
+@Override
+public byte[] onBaseFileChunkRequested(long currentBaseFileSize) {
+	// TODO Auto-generated method stub
+	return null;
+}
+@Override
+public void onBaseFileUploadComplete(long baseFileSize) {
+	// TODO Auto-generated method stub
+	
+}
+@Override
+public void onBaseFileChunkReceived(byte[] baseFileChunk) {
+	// TODO Auto-generated method stub
+	
+}
+@Override
+public void onParticipantJoined(CollabrifyParticipant p) {
+	// TODO Auto-generated method stub
+	
+}
+@Override
+public void onParticipantLeft(CollabrifyParticipant p) {
+	// TODO Auto-generated method stub
+	
+}
+@Override
+public void onSessionEnd(long id) {
+	// TODO Auto-generated method stub
+	
+}
   
 
 }

@@ -13,6 +13,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
+import edu.umich.imlc.collabrify.client.CollabrifyAdapter;
 import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
 import edu.umich.imlc.collabrify.client.CollabrifyParticipant;
@@ -32,6 +33,7 @@ public class ColabrifyClientObject
   public String sessionName;
   public CollabrifyClient myClient;
   private CustomListener listener;
+  private CustomAdapter adapter;
   public ColabrifyClientObject(Context input, boolean createSession, String email, String userName, Activity parent)
   {
 	  context = input;
@@ -39,7 +41,8 @@ public class ColabrifyClientObject
 	  try 
 	  {
 		listener = new CustomListener(context, parent);
-		myClient = new CollabrifyClient(context, email, userName, "411fall2013@umich.edu", "XY3721425NoScOpE", false, listener);
+		adapter = new CustomAdapter(parent);
+		myClient = new CollabrifyClient(parent, email, userName, "441fall2013@umich.edu", "XY3721425NoScOpE", false, adapter);
 		if(myClient.inSession())
 		{
 			myClient.leaveSession(true);
@@ -58,7 +61,7 @@ public class ColabrifyClientObject
       if(createNewSession)
       {
     	  Random rand = new Random();
-    	  sessionName = "Test" + rand.nextInt();
+    	  sessionName = "Jbarno" + rand.nextInt();
     	  myClient.createSession(sessionName, tags, null, 0);
     	  Log.i("CCO", "Attempting to Create Session");
       }
@@ -95,6 +98,93 @@ public class ColabrifyClientObject
   		}
   	  }
   }
+private class CustomAdapter extends CollabrifyAdapter
+{
+  private Activity parent;
+  public CustomAdapter(Activity input)
+  {
+	  parent = input;
+  }
+  @Override
+  public void onSessionCreated(long id)
+  {
+    sessionId = id;
+    Log.i("CCO", "Session created.");
+  }
+  @Override
+  public void onSessionJoined(long maxOrderId, long baseFileSize)
+  {
+    Log.i("CCO", "SessionJoinedCalled");
+  }
+  @Override
+  public void onReceiveSessionList(final List<CollabrifySession> sessionList)
+  {
+    if( sessionList.isEmpty())
+    {
+    	Log.i("CCO", "No Session Available using Tags: " + tags.get(0));
+    	parent.runOnUiThread(new Runnable()
+    	{
+    		@Override
+    		public void run()
+    		{
+    	    	Toast.makeText(context, "No possible Sessions to Join", Toast.LENGTH_SHORT).show();
+    	        parent.finish();
+    		}
+    	});
+    	return;
+    }
+    List<String> sessionNames = new ArrayList<String>();
+    for(CollabrifySession s : sessionList)
+    {
+    	sessionNames.add(s.name());
+    }
+    final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+    builder.setTitle("Choose a session").setItems(
+    		sessionNames.toArray(new String[sessionList.size()]), 
+    		new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					try
+					{
+						sessionId = sessionList.get(which).id();
+						sessionName = sessionList.get(which).name();
+						myClient.joinSession(sessionId, null);
+					}
+					catch( CollabrifyException e)
+					{
+						Log.i("CCO", "Join Session Failed", e);
+					}
+				}
+			});
+    parent.runOnUiThread(new Runnable()
+    {
+		@Override
+		public void run() {
+			builder.show();
+		}
+    });
+  }
+  @Override
+  public void onReceiveEvent(long orderId, int submissionRegistrationId,
+      String eventType, byte[] data)
+  {
+	  Log.i("CCO", "Event recieved");
+  }
+
+  @Override
+  public void onDisconnect()
+  {
+    Log.i("CCO", "Disconnect Triggered in Listener");
+
+  }
+  @Override 
+  public void onError(CollabrifyException e)
+  {
+	  e.printStackTrace();
+  }
+
+}
 
 private class CustomListener implements CollabrifyListener
 {

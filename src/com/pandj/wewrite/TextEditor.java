@@ -103,8 +103,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   {
     sessionId = id;
     Log.i("CCO", "Session created.");
-    textBox.setEnabled(false);
-    textBox.setFocusable(false);
+    enableTextEdit();
   }
   
   @Override
@@ -117,8 +116,24 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     	finish();
     }
     startingOrderId = maxOrderId;
-    textBox.setEnabled(false);
-    textBox.setFocusable(false);
+    enableTextEdit();
+  }
+  
+  private void enableTextEdit()
+  {
+	    runOnUiThread(new Runnable()
+	    {
+	    	
+	    	@Override
+	    	public void run()
+	    	{
+	    	    textBox.setEnabled(true);
+	    	    textBox.setFocusable(true);
+	    	    textBox.requestFocus();
+	    	    textBox.setVisibility(View.VISIBLE);
+	    	    enableButton(disconnect);
+	    	}
+	    });
   }
   @Override
   public void onReceiveSessionList(final List<CollabrifySession> sessionList)
@@ -240,7 +255,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       insert.valid = false;;//For right now
       insert.populateDifference();
       toTheStack.InsertLocalData(insert);
-	  eventMap.put(toTheStack.subId, toTheStack);
+      toTheStack.broadCast();
       localUndoStack.push(toTheStack);
       enableButton(undo);
     }
@@ -321,9 +336,9 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     
     disableButton(undo);
     disableButton(redo);
+    disableButton(disconnect);
+    textBox.setVisibility(View.GONE);
     
-    textBox.setEnabled(false);
-    textBox.setFocusable(false);
   }
 
   private class StateInfo
@@ -369,26 +384,22 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	protoBuff.setCursorLocationBefore(insert.cursorLocationBefore);
 	    	protoBuff.setCursorLocationAfter(insert.cursorLocationAfter);
 	    	protoBuff.setDifferText(insert.differText);
-	    	
-	    	data = protoBuff.build();
-	    	byte[] message = data.toByteArray();
-	    	try 
-	    	{	//TODO: subId doesn't come back right away.... 
-				subId = clientListener.myClient.broadcast(message, userName);
-			} catch (CollabrifyException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+	    }
+	    public void broadCast()
+	    {
+	    	this.run();
 	    }
 	    
 	    @Override
 	    public void run()
 	    {
 	      //Send it over the wire!
+	    	data = protoBuff.build();
 	    	byte[] message = data.toByteArray();
 	    	try 
 	    	{//Race Condition possible TODO: Think about undoing something immediatly. 
 				subId = clientListener.myClient.broadcast(message, userName);
+				eventMap.append(subId, this);
 			} catch (CollabrifyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -499,7 +510,6 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
         }
         break;
       case(R.id.disconnect) :
-    	clientListener.destroy();
       	this.finish();
         break;
     }

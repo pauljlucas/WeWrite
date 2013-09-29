@@ -8,8 +8,10 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pandj.wewrite.javaProtoOutput;
@@ -87,7 +89,11 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   private ColabrifyClientObject clientListener;
   private String sessionName; 
   private long sessionId;
-  private long orderId;
+  long startingOrderId;
+
+  private Map<Integer,panCakeLocal> eventMap;
+  private Map<String,Integer> cursorMap;
+  
   
   //CollabrifyListener Functions
   @Override
@@ -96,6 +102,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     sessionId = id;
     Log.i("CCO", "Session created.");
   }
+  
   @Override
   public void onSessionJoined(long maxOrderId, long baseFileSize)
   {
@@ -105,7 +112,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     	Log.i("CCO", "Joined session with basefile!");
     	finish();
     }
-    orderId = maxOrderId;
+    startingOrderId = maxOrderId;
   }
   @Override
   public void onReceiveSessionList(final List<CollabrifySession> sessionList)
@@ -168,6 +175,26 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       String eventType, byte[] data)
   {
 	  Log.i("CCO", "Event recieved");
+	  if(submissionRegistrationId == -1)//Originated from a different host
+	  {
+		  panCakeRemote event = new panCakeRemote(data);
+		  event.state.globalOrderId = orderId;
+		  if(cursorMap.keySet().contains(eventType))
+		  {
+			  cursorMap.remove(eventType);
+			  cursorMap.put(eventType, event.state.cursorLocationAfter);
+		  }
+		  else
+		  {
+			  cursorMap.put(eventType, event.state.cursorLocationAfter);
+		  }
+	  }
+	  else//Originated from this one
+	  {
+		  panCakeLocal temp = eventMap.get(submissionRegistrationId);
+		  temp.state.valid = true;
+		  temp.state.globalOrderId = orderId;
+	  }
   }
 
   @Override
@@ -265,6 +292,9 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     
     localUndoStack = new Stack<panCakeLocal>();
     localRedoStack = new Stack<panCakeLocal>();
+    
+    cursorMap = new ConcurrentHashMap<String,Integer>();
+    eventMap = new ConcurrentHashMap<Integer,panCakeLocal>();
 
     if(createNewSession)
     {
@@ -320,6 +350,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     protected protoData.Builder protoBuff = protoData.newBuilder();
     protected protoData data = null;
     protected StateInfo state;
+    protected int subId;
     
   }
   
@@ -337,17 +368,16 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	protoBuff.setDifferText(insert.differText);
 	    	
 	    	data = protoBuff.build();
-	    	byte[] test = data.toByteArray();
-	    	try {
-				protoData check = protoData.parseFrom(test);
-				if(check == data)
-				{
-					Toast.makeText(getApplicationContext(), "It worked!", Toast.LENGTH_SHORT).show();
-				}
-			} catch (InvalidProtocolBufferException e) {
+	    	byte[] message = data.toByteArray();
+	    	try 
+	    	{	//TODO: subId doesn't come back right away.... 
+				subId = clientListener.myClient.broadcast(message, userName);
+				eventMap.put(subId, this);
+			} catch (CollabrifyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+	    	
 	    	
 	    }
 	    
@@ -355,6 +385,14 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    public void run()
 	    {
 	      //Send it over the wire!
+	    	byte[] message = data.toByteArray();
+	    	try 
+	    	{//Race Condition possible TODO: Think about undoing something immediatly. 
+				subId = clientListener.myClient.broadcast(message, userName);
+			} catch (CollabrifyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	      textBox.removeTextChangedListener(textBoxListener);
 	      textBox.setText(this.state.textAfter);
 	      textBox.setSelection(this.state.cursorLocationAfter);

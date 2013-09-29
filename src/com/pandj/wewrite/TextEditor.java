@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -34,6 +35,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -91,8 +93,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   private long sessionId;
   long startingOrderId;
 
-  private Map<Integer,panCakeLocal> eventMap;
-  private Map<String,Integer> cursorMap;
+  private SparseArray<panCakeLocal> eventMap;
+  private HashMap<String,Integer> cursorMap;
   
   
   //CollabrifyListener Functions
@@ -101,6 +103,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   {
     sessionId = id;
     Log.i("CCO", "Session created.");
+    textBox.setEnabled(false);
+    textBox.setFocusable(false);
   }
   
   @Override
@@ -113,6 +117,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     	finish();
     }
     startingOrderId = maxOrderId;
+    textBox.setEnabled(false);
+    textBox.setFocusable(false);
   }
   @Override
   public void onReceiveSessionList(final List<CollabrifySession> sessionList)
@@ -234,7 +240,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       insert.valid = false;;//For right now
       insert.populateDifference();
       toTheStack.InsertLocalData(insert);
-      
+	  eventMap.put(toTheStack.subId, toTheStack);
       localUndoStack.push(toTheStack);
       enableButton(undo);
     }
@@ -293,8 +299,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     localUndoStack = new Stack<panCakeLocal>();
     localRedoStack = new Stack<panCakeLocal>();
     
-    cursorMap = new ConcurrentHashMap<String,Integer>();
-    eventMap = new ConcurrentHashMap<Integer,panCakeLocal>();
+    cursorMap = new HashMap<String,Integer>();
+    eventMap = new SparseArray<panCakeLocal>();
 
     if(createNewSession)
     {
@@ -316,7 +322,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     disableButton(undo);
     disableButton(redo);
     
-
+    textBox.setEnabled(false);
+    textBox.setFocusable(false);
   }
 
   private class StateInfo
@@ -326,14 +333,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 		public String differText = ""; 
 		public int cursorLocationAfter = 0 ;
 		public int cursorLocationBefore = 0;
-		public long globalOrderId = 0;
+		public long globalOrderId = -1;
 		public boolean valid = false;
 	    public void populateDifference() 
 	    {
-	      if(textAfter.length() == textBefore.length())
-	      {
-	    	  differText = "";
-	      }
 	      if(textAfter.length() > textBefore.length())//Insertion
 	      {
 	        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
@@ -372,13 +375,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	try 
 	    	{	//TODO: subId doesn't come back right away.... 
 				subId = clientListener.myClient.broadcast(message, userName);
-				eventMap.put(subId, this);
 			} catch (CollabrifyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	    	
-	    	
 	    }
 	    
 	    @Override

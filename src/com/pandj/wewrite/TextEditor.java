@@ -199,7 +199,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 			  cursorMap.put(eventType, event.state.cursorLocationAfter);
 		  }
 		  //Stupid easy implementation first.
-		  event.run();
+		  runOnUiThread(event);
 	  }
 	  else//Originated from this client
 	  {
@@ -309,6 +309,11 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       StateInfo s = new StateInfo();
       s.textAfter = localText;
       s.valid = true;
+      s.textBefore = "";
+      s.cursorLocationAfter = 0;
+      s.cursorLocationBefore = 0;
+      s.globalOrderId = -1;
+      s.differText = "";
       edgeCase.InsertLocalData(s);
       localUndoStack.push(edgeCase);
     }
@@ -337,13 +342,13 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   private class StateInfo
   {
-		public String textAfter = "";
-		public String textBefore = "";
-		public String differText = ""; 
-		public int cursorLocationAfter = 0 ;
-		public int cursorLocationBefore = 0;
-		public long globalOrderId = -1;
-		public boolean valid = false;
+		public String textAfter;
+		public String textBefore;
+		public String differText; 
+		public int cursorLocationAfter;
+		public int cursorLocationBefore;
+		public long globalOrderId;
+		public boolean valid;
 	    public void populateDifference() 
 	    {
 	      if(textAfter.length() > textBefore.length())//Insertion
@@ -367,10 +372,12 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   private class panCakeLocal extends panCake implements Runnable 
   {
+	    private boolean undone;
 	    public void InsertLocalData(StateInfo insert)
 	    {
 	    	
-	    	data = protoData.newBuilder().setTextAfter(insert.textAfter)
+	    	data = protoData.newBuilder()
+	    			.setTextAfter(insert.textAfter)
 	    			.setTextBefore(insert.textBefore)
 	    			.setValid(insert.valid)
 	    			.setGlobalOrderId(insert.globalOrderId)
@@ -378,6 +385,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    			.setCursorLocationAfter(insert.cursorLocationAfter)
 	    			.setDifferText(insert.differText)
 	    			.build();
+	    	undone = false;
 	    }
 	    public void broadCast()
 	    {
@@ -392,40 +400,63 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	try 
 	    	{//Race Condition possible TODO: Think about undoing something immediatly. 
 				subId = clientListener.myClient.broadcast(message, userName);
-				eventMap.append(subId, this);
+				eventMap.put(subId, this);
 			} catch (CollabrifyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	      textBox.removeTextChangedListener(textBoxListener);
-	      textBox.setText(this.state.textAfter);
-	      textBox.setSelection(this.state.cursorLocationAfter);
-	      textBox.addTextChangedListener(textBoxListener);
+	    	if(undone)
+	    	{
+		      textBox.removeTextChangedListener(textBoxListener);
+		      textBox.setText(this.state.textAfter);
+		      textBox.setSelection(this.state.cursorLocationAfter);
+		      textBox.addTextChangedListener(textBoxListener);
+	    	}
+	    	undone = true;
 	    }
   }
   
   public class panCakeRemote extends panCake implements Runnable 
   {
-	  private protoData.Builder builder;
+	private byte[] temp;
     public panCakeRemote(byte[] input) 
     {
+    	state = new StateInfo();
     	try 
-    	{	
-    		data = protoData.parseFrom(input);
-    		builder = protoData.newBuilder(data);//Both of these implementations throw exceptions
-    		state.cursorLocationAfter = builder.getCursorLocationAfter();
-			state.cursorLocationAfter = data.getCursorLocationAfter();
-			state.cursorLocationBefore = data.getCursorLocationBefore();
-			state.valid = data.getValid();
-			state.globalOrderId = data.getGlobalOrderId();
-			state.textAfter = data.getTextAfter();
-			state.textBefore = data.getTextBefore();
-			state.differText = data.getDifferText();
+    	{	temp = input;
+    		data = protoData.parseFrom(temp);
+    		if(data.hasCursorLocationAfter())
+    		{
+    			state.cursorLocationAfter = data.getCursorLocationAfter();
+    		}
+    		if(data.hasCursorLocationBefore())
+    		{
+    			state.cursorLocationBefore = data.getCursorLocationBefore();
+    		}
+    		if(data.hasDifferText())
+    		{
+    			state.differText = data.getDifferText();
+    		}
+    		if(data.hasGlobalOrderId())
+    		{
+    			state.globalOrderId = data.getGlobalOrderId();
+    		}
+    		if(data.hasTextAfter())
+    		{
+    			state.textAfter = data.getTextAfter();
+    		}
+    		if(data.hasTextBefore())
+    		{
+    			state.textBefore = data.getTextBefore();
+    		}
+    		if(data.hasValid())
+    		{
+    			state.valid = data.getValid();
+    		}
 		} catch (InvalidProtocolBufferException e) 
 		{
 			e.printStackTrace();
 		}
-    	this.run();
 	}
     
 	@Override

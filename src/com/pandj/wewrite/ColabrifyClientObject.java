@@ -27,7 +27,7 @@ public class ColabrifyClientObject
   private long sessionId;
   private boolean createNewSession;
 
-  public final List<String> tags = Arrays.asList("umich");  
+  public final List<String> tags = Arrays.asList("jbarno");  
   public String sessionName;
   public CollabrifyClient myClient;
   public ColabrifyClientObject(Context context, boolean createSession, String email, String userName, CollabrifyListener inListen)

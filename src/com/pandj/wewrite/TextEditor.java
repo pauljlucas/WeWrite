@@ -359,8 +359,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   public class panCake 
   {
-    protected protoData.Builder protoBuff = protoData.newBuilder();
-    protected protoData data = null;
+	protected protoData data;
     protected StateInfo state;
     protected int subId;
     
@@ -370,14 +369,15 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   {
 	    public void InsertLocalData(StateInfo insert)
 	    {
-	    	state = insert;
-	    	protoBuff.setTextAfter(insert.textAfter);
-	    	protoBuff.setTextBefore(insert.textBefore);
-	    	protoBuff.setValid(insert.valid);
-	    	protoBuff.setGlobalOrderId(insert.globalOrderId);
-	    	protoBuff.setCursorLocationBefore(insert.cursorLocationBefore);
-	    	protoBuff.setCursorLocationAfter(insert.cursorLocationAfter);
-	    	protoBuff.setDifferText(insert.differText);
+	    	
+	    	data = protoData.newBuilder().setTextAfter(insert.textAfter)
+	    			.setTextBefore(insert.textBefore)
+	    			.setValid(insert.valid)
+	    			.setGlobalOrderId(insert.globalOrderId)
+	    			.setCursorLocationBefore(insert.cursorLocationBefore)
+	    			.setCursorLocationAfter(insert.cursorLocationAfter)
+	    			.setDifferText(insert.differText)
+	    			.build();
 	    }
 	    public void broadCast()
 	    {
@@ -388,7 +388,6 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    public void run()
 	    {
 	      //Send it over the wire!
-	    	data = protoBuff.build();
 	    	byte[] message = data.toByteArray();
 	    	try 
 	    	{//Race Condition possible TODO: Think about undoing something immediatly. 
@@ -407,11 +406,14 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   public class panCakeRemote extends panCake implements Runnable 
   {
+	  private protoData.Builder builder;
     public panCakeRemote(byte[] input) 
     {
     	try 
-    	{
-			data = protoData.parseFrom(input);
+    	{	
+    		data = protoData.parseFrom(input);
+    		builder = protoData.newBuilder(data);//Both of these implementations throw exceptions
+    		state.cursorLocationAfter = builder.getCursorLocationAfter();
 			state.cursorLocationAfter = data.getCursorLocationAfter();
 			state.cursorLocationBefore = data.getCursorLocationBefore();
 			state.valid = data.getValid();

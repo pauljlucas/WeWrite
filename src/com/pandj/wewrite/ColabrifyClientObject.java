@@ -82,11 +82,10 @@ public class ColabrifyClientObject
   		} 
   		catch (LeaveException e) 
   		{
-  			// TODO Auto-generated catch block
   			e.printStackTrace();
-  		} catch (CollabrifyException e) 
+  		} 
+  		catch (CollabrifyException e) 
   		{
-  			// TODO Auto-generated catch block
   			e.printStackTrace();
   		}
   	  }

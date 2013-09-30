@@ -1,29 +1,16 @@
 package com.pandj.wewrite;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.pandj.wewrite.javaProtoOutput;
 import com.pandj.wewrite.javaProtoOutput.protoData;
 
-import edu.umich.imlc.collabrify.client.CollabrifyClient;
 import edu.umich.imlc.collabrify.client.CollabrifyListener;
 import edu.umich.imlc.collabrify.client.CollabrifyParticipant;
 import edu.umich.imlc.collabrify.client.CollabrifySession;
 import edu.umich.imlc.collabrify.client.exceptions.CollabrifyException;
-import edu.umich.imlc.collabrify.client.exceptions.LeaveException;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
@@ -75,6 +62,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 {
 
   private EditTextSelection textBox;
+  private customListener textBoxListener;
   private Button undo, redo, disconnect;
   
   private Stack<panCakeLocal> localUndoStack;
@@ -135,6 +123,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	}
 	    });
   }
+  
   @Override
   public void onReceiveSessionList(final List<CollabrifySession> sessionList)
   {
@@ -209,8 +198,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 		  {
 			  cursorMap.put(eventType, event.state.cursorLocationAfter);
 		  }
+		  //Stupid easy implementation first.
+		  event.run();
 	  }
-	  else//Originated from this one
+	  else//Originated from this client
 	  {
 		  panCakeLocal temp = eventMap.get(submissionRegistrationId);
 		  temp.state.valid = true;
@@ -224,15 +215,15 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     Log.i("CCO", "Disconnect Triggered in Listener");
 
   }
+  
   @Override 
   public void onError(CollabrifyException e)
   {
+	  //Potential to cause problems if we own the session and get error
+	  //Other users experience would be unknown.
 	  e.printStackTrace();
+	  finish();
   }
-  
-  
-  
-  
   
   private class customListener implements TextWatcher 
   {
@@ -274,14 +265,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     }
  
   }
-  private customListener textBoxListener;
-  
-  @Override
-  protected void onResume()
-  {
-    super.onResume();
-    this.setTitle(clientListener.sessionName);
-  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
@@ -321,26 +305,36 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     {
       localText = "";
       cursorLocation = 0;	
+      panCakeLocal edgeCase = new panCakeLocal();
+      StateInfo s = new StateInfo();
+      s.textAfter = localText;
+      s.valid = true;
+      edgeCase.InsertLocalData(s);
+      localUndoStack.push(edgeCase);
     }
+    else
+    {
+    	//The join scenario
+    }
+    
     //Need to get the server state.
     localText = "";
     cursorLocation = 0;
-
-    panCakeLocal edgeCase = new panCakeLocal();
-    StateInfo s = new StateInfo();
-    s.textAfter = localText;
-    s.valid = true;
-    edgeCase.InsertLocalData(s);
-    localUndoStack.push(edgeCase);
-    
-    
+        
     disableButton(undo);
     disableButton(redo);
     disableButton(disconnect);
     textBox.setVisibility(View.GONE);
-    
   }
-
+  
+  @Override
+  protected void onResume()
+  {
+    super.onResume();
+    sessionName = clientListener.sessionName;
+    this.setTitle(sessionName);
+  }
+  
   private class StateInfo
   {
 		public String textAfter = "";
@@ -435,14 +429,9 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	@Override
 	public void run() 
 	{
-		// TODO Auto-generated method stub
-		
+
 	}
-    //send and receive functions for both
-    //Also make it so that when something is added it adds it to both protocol buffers and local vars
-    //LOOK FOR BYTE ARRAY IN HOWTO Set up collabrify
 }
-  
   
   private void disableButton(Button b)
   {

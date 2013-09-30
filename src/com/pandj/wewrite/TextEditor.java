@@ -429,7 +429,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	@Override
 	public void run() 
 	{
-
+	      textBox.removeTextChangedListener(textBoxListener);
+	      textBox.setText(this.state.textAfter);
+	      textBox.setSelection(this.state.cursorLocationAfter);
+	      textBox.addTextChangedListener(textBoxListener);
 	}
 }
   

@@ -261,7 +261,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       insert.cursorLocationBefore = textBox.getcursorLocation();
       
       cursorLocation = start + count;
-      localText = s.subSequence(start, start + count).toString();//TODO: Test against large strings, this may break
+      localText = s.toString();
       
       insert.textAfter = localText;
       insert.cursorLocationAfter = cursorLocation;
@@ -402,13 +402,19 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    			.build();
 	    }
 	    
-	    public void updateLocal()
+	    public void updateLocal()//UNDO REDO Functionality
 	    {
+	    	  Log.i("TEXT BOX", "updateLocal Called!");
 		      textBox.removeTextChangedListener(textBoxListener);
 		      textBox.setText(this.state.textAfter);
-		      if( this.state.cursorLocationAfter < this.state.textAfter.length())
+		      localText = this.state.textAfter;
+		      if( this.state.cursorLocationAfter < localText.length())
 		      {
 		    	  textBox.setSelection(this.state.cursorLocationAfter);
+		      }
+		      else 
+		      {
+		    	  textBox.setSelection(localText.length());
 		      }
 		      textBox.addTextChangedListener(textBoxListener);
 		      this.run();
@@ -488,7 +494,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	{
 	      textBox.removeTextChangedListener(textBoxListener);
 	      textBox.setText(this.state.textAfter);
-	      textBox.setSelection(this.state.cursorLocationAfter);
+	      //textBox.setSelection(this.state.cursorLocationAfter);
 	      textBox.addTextChangedListener(textBoxListener);
 	}
 }
@@ -563,36 +569,40 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
         break;
     }
   }
-@Override
-public byte[] onBaseFileChunkRequested(long currentBaseFileSize) {
-	// TODO Auto-generated method stub
-	return null;
-}
-@Override
-public void onBaseFileUploadComplete(long baseFileSize) {
-	// TODO Auto-generated method stub
-	
-}
-@Override
-public void onBaseFileChunkReceived(byte[] baseFileChunk) {
-	// TODO Auto-generated method stub
-	
-}
-@Override
-public void onParticipantJoined(CollabrifyParticipant p) {
-	// TODO Auto-generated method stub
-	
-}
-@Override
-public void onParticipantLeft(CollabrifyParticipant p) {
-	// TODO Auto-generated method stub
-	
-}
-@Override
-public void onSessionEnd(long id) {
-	// TODO Auto-generated method stub
-	
-}
-  
+	@Override
+	public byte[] onBaseFileChunkRequested(long currentBaseFileSize) 
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void onBaseFileUploadComplete(long baseFileSize) 
+	{
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onBaseFileChunkReceived(byte[] baseFileChunk) 
+	{
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onParticipantJoined(CollabrifyParticipant p) 
+	{
+		Toast.makeText(getBaseContext(), p.getDisplayName() + " has Joined!", Toast.LENGTH_LONG).show();
+	}
+	@Override
+	public void onParticipantLeft(CollabrifyParticipant p) 
+	{
+		Toast.makeText(getBaseContext(), p.getDisplayName() + " has Left!", Toast.LENGTH_LONG).show();
+	}
+	@Override
+	public void onSessionEnd(long id) 
+	{
+		// TODO Auto-generated method stub
+		
+	}
+	  
 
 }

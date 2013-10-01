@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pandj.wewrite.javaProtoOutput.protoData;
 
@@ -96,7 +99,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    sessionId = id;
 	    Log.i("CCO", "Session created.");
 	    startingOrderId = 0;
-	    enableTextEdit();
+	    enableTextEdit(this);
 	}
 	else
 	{
@@ -115,11 +118,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     }
     joinedSession = true;
     startingOrderId = maxOrderId;
-    
-    enableTextEdit();
+    enableTextEdit(this);
   }
   
-  private void enableTextEdit()
+private void enableTextEdit(final TextEditor textEditor)
   {
 	    runOnUiThread(new Runnable()
 	    {
@@ -131,6 +133,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	    textBox.setFocusable(true);
 	    	    textBox.requestFocus();
 	    	    textBox.setVisibility(View.VISIBLE);
+	    	    textEditor.setTitle(sessionName);
 	    	    enableButton(disconnect);
 	    	}
 	    });
@@ -236,7 +239,8 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   public void onDisconnect()
   {
     Log.i("CCO", "Disconnect Triggered in Listener");
-
+    Toast.makeText(getBaseContext(), "You were disconnected.", Toast.LENGTH_LONG).show();
+    finish();
   }
   
   @Override 
@@ -250,30 +254,48 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   private class customListener implements TextWatcher 
   {
-
+	private Timer timer;
+	private boolean buildUp;
+	public void customListener()
+	{
+		timer = new Timer(true);//Daemon Timer
+		buildUp = true;
+	}
+	
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
-
-      panCakeLocal toTheStack = new panCakeLocal();
-      StateInfo insert = new StateInfo();
-      insert.textBefore = localText;
-      insert.cursorLocationBefore = textBox.getcursorLocation();
-      
-      cursorLocation = start + count;
-      localText = s.toString();
-      
-      insert.textAfter = localText;
-      insert.cursorLocationAfter = cursorLocation;
-      insert.valid = false;;//For right now
-      insert.populateDifference();
-      toTheStack.InsertLocalData(insert, 0);
-      toTheStack.broadCast();
-      localUndoStack.push(toTheStack);
-      enableButton(undo);
+    	if(buildUp)
+    	{
+    		buildUp = false;
+	    	timer.schedule(new TimerTask(){
+	
+				@Override
+				public void run() {
+					buildUp = true;
+				}
+	    		
+	    	}, 800);
+	    	return;
+    	}
+	      panCakeLocal toTheStack = new panCakeLocal();
+	      StateInfo insert = new StateInfo();
+	      insert.textBefore = localText;
+	      insert.cursorLocationBefore = textBox.getcursorLocation();
+	      
+	      cursorLocation = start + count;
+	      localText = s.toString();
+	      
+	      insert.textAfter = localText;
+	      insert.cursorLocationAfter = cursorLocation;
+	      insert.valid = false;;//For right now
+	      insert.populateDifference();
+	      toTheStack.InsertLocalData(insert, 0);
+	      toTheStack.broadCast();
+	      localUndoStack.push(toTheStack);
+	      enableButton(undo);
     }
     
-
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) 
     {
@@ -285,7 +307,6 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     {
 
     }
- 
   }
 
   @Override

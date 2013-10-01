@@ -79,7 +79,9 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   private ColabrifyClientObject clientListener;
   private String sessionName; 
   private long sessionId;
-  long startingOrderId;
+  private long startingOrderId;
+  
+  private boolean joinedSession = false;
 
   private SparseArray<panCakeLocal> eventMap;
   private HashMap<String,Integer> cursorMap;
@@ -89,9 +91,17 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   @Override
   public void onSessionCreated(long id)
   {
-    sessionId = id;
-    Log.i("CCO", "Session created.");
-    enableTextEdit();
+	if(createNewSession)
+	{
+	    sessionId = id;
+	    Log.i("CCO", "Session created.");
+	    startingOrderId = 0;
+	    enableTextEdit();
+	}
+	else
+	{
+		Log.i("CCO ", "On Session Created called without createNewSession");
+	}
   }
   
   @Override
@@ -103,7 +113,9 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     	Log.i("CCO", "Joined session with basefile!");
     	finish();
     }
+    joinedSession = true;
     startingOrderId = maxOrderId;
+    
     enableTextEdit();
   }
   
@@ -187,7 +199,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	  Log.i("CCO", "Event recieved");
 	  if(submissionRegistrationId == -1)//Originated from a different host
 	  {
-		  panCakeRemote event = new panCakeRemote(data);
+		  panCakeRemote event = new panCakeRemote(data, orderId);
 		  event.state.globalOrderId = orderId;
 		  if(cursorMap.keySet().contains(eventType))
 		  {
@@ -199,13 +211,24 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 			  cursorMap.put(eventType, event.state.cursorLocationAfter);
 		  }
 		  //Stupid easy implementation first.
-		  runOnUiThread(event);
+		  if(orderId > startingOrderId)
+		  {
+			  runOnUiThread(event);
+		  }
+		  else
+		  {
+			  Log.i("CCO", "Event was behind the times");
+		  }
 	  }
 	  else//Originated from this client
 	  {
-		  panCakeLocal temp = eventMap.get(submissionRegistrationId);
+/*		  panCakeLocal temp = eventMap.get(submissionRegistrationId);
 		  temp.state.valid = true;
-		  temp.state.globalOrderId = orderId;
+		  temp.state.globalOrderId = orderId;*/
+	  }
+	  if(orderId > startingOrderId)//TODO: Potential wrap around issue!
+	  {
+		  startingOrderId = orderId;
 	  }
   }
 
@@ -231,7 +254,6 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) 
     {
-      String temp = s.toString();
 
       panCakeLocal toTheStack = new panCakeLocal();
       StateInfo insert = new StateInfo();
@@ -239,13 +261,13 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       insert.cursorLocationBefore = textBox.getcursorLocation();
       
       cursorLocation = start + count;
-      localText = temp;
+      localText = s.subSequence(start, start + count).toString();//TODO: Test against large strings, this may break
       
       insert.textAfter = localText;
       insert.cursorLocationAfter = cursorLocation;
       insert.valid = false;;//For right now
       insert.populateDifference();
-      toTheStack.InsertLocalData(insert);
+      toTheStack.InsertLocalData(insert, 0);
       toTheStack.broadCast();
       localUndoStack.push(toTheStack);
       enableButton(undo);
@@ -301,10 +323,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     cursorMap = new HashMap<String,Integer>();
     eventMap = new SparseArray<panCakeLocal>();
 
+    localText = "";
+    cursorLocation = 0;	
     if(createNewSession)
     {
-      localText = "";
-      cursorLocation = 0;	
       panCakeLocal edgeCase = new panCakeLocal();
       StateInfo s = new StateInfo();
       s.textAfter = localText;
@@ -312,19 +334,11 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
       s.textBefore = "";
       s.cursorLocationAfter = 0;
       s.cursorLocationBefore = 0;
-      s.globalOrderId = -1;
+      s.globalOrderId = 0;
       s.differText = "";
-      edgeCase.InsertLocalData(s);
+      edgeCase.InsertLocalData(s, 0);//Solve this with polymorhpism
       localUndoStack.push(edgeCase);
     }
-    else
-    {
-    	//The join scenario
-    }
-    
-    //Need to get the server state.
-    localText = "";
-    cursorLocation = 0;
         
     disableButton(undo);
     disableButton(redo);
@@ -351,14 +365,15 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 		public boolean valid;
 	    public void populateDifference() 
 	    {
-	      if(textAfter.length() > textBefore.length())//Insertion
+	    	differText = "Not Used";
+	     /* if(textAfter.length() > textBefore.length())//Insertion
 	      {
 	        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
 	      }
 	      else
 	      {
 	        differText = textBefore.substring(cursorLocationAfter, cursorLocationBefore);
-	      }
+	      }*/
 	    }
   }
   
@@ -372,10 +387,10 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   private class panCakeLocal extends panCake implements Runnable 
   {
-	    private boolean undone;
-	    public void InsertLocalData(StateInfo insert)
+	    public void InsertLocalData(StateInfo insert, long startingOrderId)
 	    {
-	    	
+	    	//Don't need startingOrderId
+	  	    state = insert;
 	    	data = protoData.newBuilder()
 	    			.setTextAfter(insert.textAfter)
 	    			.setTextBefore(insert.textBefore)
@@ -385,8 +400,20 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    			.setCursorLocationAfter(insert.cursorLocationAfter)
 	    			.setDifferText(insert.differText)
 	    			.build();
-	    	undone = false;
 	    }
+	    
+	    public void updateLocal()
+	    {
+		      textBox.removeTextChangedListener(textBoxListener);
+		      textBox.setText(this.state.textAfter);
+		      if( this.state.cursorLocationAfter < this.state.textAfter.length())
+		      {
+		    	  textBox.setSelection(this.state.cursorLocationAfter);
+		      }
+		      textBox.addTextChangedListener(textBoxListener);
+		      this.run();
+	    }
+	    
 	    public void broadCast()
 	    {
 	    	this.run();
@@ -400,31 +427,22 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	    	try 
 	    	{//Race Condition possible TODO: Think about undoing something immediatly. 
 				subId = clientListener.myClient.broadcast(message, userName);
-				eventMap.put(subId, this);
+				//eventMap.put(subId, this);
 			} catch (CollabrifyException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	    	if(undone)
-	    	{
-		      textBox.removeTextChangedListener(textBoxListener);
-		      textBox.setText(this.state.textAfter);
-		      textBox.setSelection(this.state.cursorLocationAfter);
-		      textBox.addTextChangedListener(textBoxListener);
-	    	}
-	    	undone = true;
 	    }
   }
   
   public class panCakeRemote extends panCake implements Runnable 
   {
-	private byte[] temp;
-    public panCakeRemote(byte[] input) 
+    public panCakeRemote(byte[] input, long globalOrder) 
     {
     	state = new StateInfo();
     	try 
-    	{	temp = input;
-    		data = protoData.parseFrom(temp);
+    	{	
+    		data = protoData.parseFrom(input);
     		if(data.hasCursorLocationAfter())
     		{
     			state.cursorLocationAfter = data.getCursorLocationAfter();
@@ -437,10 +455,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     		{
     			state.differText = data.getDifferText();
     		}
-    		if(data.hasGlobalOrderId())
-    		{
-    			state.globalOrderId = data.getGlobalOrderId();
-    		}
+    		state.globalOrderId = globalOrder;
     		if(data.hasTextAfter())
     		{
     			state.textAfter = data.getTextAfter();
@@ -457,6 +472,15 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 		{
 			e.printStackTrace();
 		}
+	    if(joinedSession)
+	    {//allows no 	   
+	      localText = "";
+	      cursorLocation = 0;	
+	      panCakeLocal edgeCase = new panCakeLocal();
+	      edgeCase.InsertLocalData(state, startingOrderId);
+	      localUndoStack.push(edgeCase);
+	      joinedSession = false;
+	   }
 	}
     
 	@Override
@@ -518,7 +542,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
           {
             disableButton(undo);
           }
-          obj.run();
+          obj.updateLocal();
         }
         break;
       case(R.id.redo) :
@@ -531,7 +555,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
           {
             disableButton(redo);
           }
-          obj.run();
+          obj.updateLocal();
         }
         break;
       case(R.id.disconnect) :

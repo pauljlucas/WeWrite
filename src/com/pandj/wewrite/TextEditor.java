@@ -600,8 +600,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
 	@Override
 	public void onSessionEnd(long id) 
 	{
-		// TODO Auto-generated method stub
-		
+		this.finish();
 	}
 	  
 

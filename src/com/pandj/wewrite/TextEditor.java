@@ -117,7 +117,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
     	finish();
     }
     joinedSession = true;
-    startingOrderId = maxOrderId;
+    startingOrderId = maxOrderId - 1;//Want to recieve the last event
     enableTextEdit(this);
   }
   

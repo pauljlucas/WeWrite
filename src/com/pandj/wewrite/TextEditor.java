@@ -612,6 +612,8 @@ private void enableTextEdit(final TextEditor textEditor)
 	public void onParticipantJoined(CollabrifyParticipant p) 
 	{
 		Toast.makeText(getBaseContext(), p.getDisplayName() + " has Joined!", Toast.LENGTH_LONG).show();
+		panCakeLocal obj = localUndoStack.peek();
+		obj.updateLocal();
 	}
 	@Override
 	public void onParticipantLeft(CollabrifyParticipant p) 

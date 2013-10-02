@@ -35,7 +35,7 @@ public class ColabrifyClientObject
 	  this.createNewSession = createSession;
 	  try 
 	  {
-		myClient = new CollabrifyClient(context, email, userName, "441fall2013@umich.edu", "XY3721425NoScOpE", false, inListen);
+		myClient = new CollabrifyClient(context, email, userName, "441fall2013@umich.edu", "XY3721425NoScOpE", true, inListen);
 		if(myClient.inSession())
 		{
 			myClient.leaveSession(true);

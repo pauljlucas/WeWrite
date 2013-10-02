@@ -449,6 +449,7 @@ private void enableTextEdit(final TextEditor textEditor)
 	    @Override
 	    public void run()
 	    {
+	    	Log.i("BROADCAST", "Broadcasting message");
 	      //Send it over the wire!
 	    	byte[] message = data.toByteArray();
 	    	try 
@@ -613,7 +614,7 @@ private void enableTextEdit(final TextEditor textEditor)
 	{
 		Toast.makeText(getBaseContext(), p.getDisplayName() + " has Joined!", Toast.LENGTH_LONG).show();
 		panCakeLocal obj = localUndoStack.peek();
-		obj.updateLocal();
+		obj.run();
 	}
 	@Override
 	public void onParticipantLeft(CollabrifyParticipant p) 

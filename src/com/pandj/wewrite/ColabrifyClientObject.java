@@ -24,10 +24,9 @@ import edu.umich.imlc.collabrify.client.exceptions.LeaveException;
 public class ColabrifyClientObject 
 {
 	//Note any overrided function in here defaults onto a background thread.
-  private long sessionId;
   private boolean createNewSession;
 
-  public final List<String> tags = Arrays.asList("jbarno");  
+  public final List<String> tags = Arrays.asList("LAO");  
   public String sessionName;
   public CollabrifyClient myClient;
   public ColabrifyClientObject(Context context, boolean createSession, String email, String userName, CollabrifyListener inListen)

@@ -70,7 +70,6 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   
   private Stack<panCakeLocal> localUndoStack;
   private Stack<panCakeLocal> localRedoStack;
-  private Stack<panCake> remoteStack;
   
   private String localText;
   private int cursorLocation;
@@ -85,11 +84,7 @@ public class TextEditor extends Activity implements OnClickListener, CollabrifyL
   private long startingOrderId;
   
   private boolean joinedSession = false;
-
-  private SparseArray<panCakeLocal> eventMap;
-  private HashMap<String,Integer> cursorMap;
-  
-  
+    
   //CollabrifyListener Functions
   @Override
   public void onSessionCreated(long id)
@@ -162,6 +157,7 @@ private void enableTextEdit(final TextEditor textEditor)
     	sessionNames.add(s.name());
     }
     final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setCancelable(false);
     builder.setTitle("Choose a session").setItems(
     		sessionNames.toArray(new String[sessionList.size()]), 
     		new DialogInterface.OnClickListener() {
@@ -204,15 +200,6 @@ private void enableTextEdit(final TextEditor textEditor)
 	  {
 		  panCakeRemote event = new panCakeRemote(data, orderId);
 		  event.state.globalOrderId = orderId;
-		  if(cursorMap.keySet().contains(eventType))
-		  {
-			  cursorMap.remove(eventType);
-			  cursorMap.put(eventType, event.state.cursorLocationAfter);
-		  }
-		  else
-		  {
-			  cursorMap.put(eventType, event.state.cursorLocationAfter);
-		  }
 		  //Stupid easy implementation first.
 		  if(orderId > startingOrderId)
 		  {
@@ -222,12 +209,6 @@ private void enableTextEdit(final TextEditor textEditor)
 		  {
 			  Log.i("CCO", "Event was behind the times");
 		  }
-	  }
-	  else//Originated from this client
-	  {
-/*		  panCakeLocal temp = eventMap.get(submissionRegistrationId);
-		  temp.state.valid = true;
-		  temp.state.globalOrderId = orderId;*/
 	  }
 	  if(orderId > startingOrderId)//TODO: Potential wrap around issue!
 	  {
@@ -340,9 +321,6 @@ private void enableTextEdit(final TextEditor textEditor)
     
     localUndoStack = new Stack<panCakeLocal>();
     localRedoStack = new Stack<panCakeLocal>();
-    
-    cursorMap = new HashMap<String,Integer>();
-    eventMap = new SparseArray<panCakeLocal>();
 
     localText = "";
     cursorLocation = 0;	
@@ -387,14 +365,6 @@ private void enableTextEdit(final TextEditor textEditor)
 	    public void populateDifference() 
 	    {
 	    	differText = "Not Used";
-	     /* if(textAfter.length() > textBefore.length())//Insertion
-	      {
-	        differText = textAfter.substring(cursorLocationBefore, cursorLocationAfter);
-	      }
-	      else
-	      {
-	        differText = textBefore.substring(cursorLocationAfter, cursorLocationBefore);
-	      }*/
 	    }
   }
   
@@ -501,7 +471,7 @@ private void enableTextEdit(final TextEditor textEditor)
 			e.printStackTrace();
 		}
 	    if(joinedSession)
-	    {//allows no 	   
+	    {
 	      localText = "";
 	      cursorLocation = 0;	
 	      panCakeLocal edgeCase = new panCakeLocal();
@@ -516,7 +486,6 @@ private void enableTextEdit(final TextEditor textEditor)
 	{
 	      textBox.removeTextChangedListener(textBoxListener);
 	      textBox.setText(this.state.textAfter);
-	      //textBox.setSelection(this.state.cursorLocationAfter);
 	      textBox.addTextChangedListener(textBoxListener);
 	}
 }
@@ -542,18 +511,12 @@ private void enableTextEdit(final TextEditor textEditor)
   }
 
   @Override
-  public boolean onCreateOptionsMenu(Menu menu)
-  {
-    // Inflate the menu; this adds items to the action bar if it is present.
-    getMenuInflater().inflate(R.menu.text_editor, menu);
-    return true;
-  }
-  @Override
   protected void onDestroy()
   {
 	  super.onDestroy();    	
 	  clientListener.destroy();
   }
+  
   @Override
   public void onClick(View v)
   {
